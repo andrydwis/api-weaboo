@@ -1,9 +1,15 @@
 from fastapi import FastAPI, HTTPException
 
 from app.routers import manga
+from app.routers.tools import social_media_downloader
 
 app = FastAPI()
 app.include_router(manga.router, prefix="/manga", tags=["manga"])
+app.include_router(
+    social_media_downloader.router,
+    prefix="/tools/social-media-downloader",
+    tags=["tools"],
+)
 
 
 @app.get("/")
