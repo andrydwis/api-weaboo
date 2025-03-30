@@ -6,13 +6,15 @@ authors = [
     {name = "andrydwis",email = "andry.dwi.s@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "fastapi[standard] (>=0.115.12,<0.116.0)",
     "uvicorn[standard] (>=0.34.0,<0.35.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "beautifulsoup4 (>=4.13.3,<5.0.0)",
     "yt-dlp (>=2025.3.27,<2026.0.0)",
+    "fastapi-cache2 (>=0.2.2,<0.3.0)",
+    "redis (>=5.2.1,<6.0.0)",
 ]
 
 [build-system]

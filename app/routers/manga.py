@@ -1,8 +1,29 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
+from redis import asyncio as aioredis
 
-router = APIRouter()
+
+@asynccontextmanager
+async def lifespan(_: APIRouter) -> AsyncIterator[None]:
+    redis = aioredis.from_url("redis://localhost")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    yield
+
+
+router = APIRouter(lifespan=lifespan)
+
+
+@cache()
+async def get_cache():
+    return 1
+
 
 app_url = "https://komiku.id"
 api_url = "https://api.komiku.id"
@@ -41,6 +62,7 @@ async def search(query: str):
 
 
 @router.get("/recent-update")
+@cache(expire=360)
 async def get_recent_update(page: int = 1):
     html = httpx.get(
         api_url + "/manga/page/" + str(page) + "/?orderby=modified",
@@ -74,6 +96,7 @@ async def get_recent_update(page: int = 1):
 
 
 @router.get("/popular")
+@cache(expire=360)
 async def get_popular(page: int = 1):
     html = httpx.get(
         api_url + "/manga/page/" + str(page) + "/?orderby=meta_value_num",
@@ -107,6 +130,7 @@ async def get_popular(page: int = 1):
 
 
 @router.get("/{id}")
+@cache(expire=360)
 async def get_manga(id: str):
     html = httpx.get(app_url + "/manga/" + id, follow_redirects=True)
 
@@ -149,6 +173,7 @@ async def get_manga(id: str):
 
 
 @router.get("/chapter/{id}")
+@cache(expire=360)
 async def get_chapter(id: str):
     html = httpx.get(app_url + "/" + id, follow_redirects=True)
 
@@ -175,6 +200,7 @@ async def get_chapter(id: str):
 
 
 @router.get("/genre/{id}")
+@cache(expire=360)
 async def get_genre(id: str, page: int = 1):
     html = httpx.get(
         api_url + "/genre/" + id + "/page/" + str(page), follow_redirects=True
