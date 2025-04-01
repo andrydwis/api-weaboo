@@ -9,6 +9,8 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from redis import asyncio as aioredis
 
+from app.models.manga import Chapter, Genre, Manga, MangaChapter, MangaDetail, Pages
+
 
 @asynccontextmanager
 async def lifespan(_: APIRouter) -> AsyncIterator[None]:
@@ -27,7 +29,7 @@ async def get_cache():
     return 1
 
 
-@router.get("/search")
+@router.get("/search", response_model=list[Manga])
 async def search(query: str):
     html = httpx.get(
         api_url + "/?post_type=manga&s=" + query,
@@ -46,20 +48,21 @@ async def search(query: str):
         genre = manga.find("div", class_="tpe1_inf").text.strip().split(" ")[-1]
         genre_id = genre.lower().replace(" ", "-")
         main_genre = {"id": genre_id, "name": genre}
+
         mangas.append(
-            {
-                "id": id,
-                "title": title,
-                "description": description,
-                "image": image,
-                "main_genre": main_genre,
-            }
+            Manga(
+                id=id,
+                title=title,
+                description=description,
+                main_genre=main_genre,
+                image=image,
+            )
         )
 
     return mangas
 
 
-@router.get("/recent-update")
+@router.get("/recent-update", response_model=list[Manga])
 @cache(expire=360)
 async def get_recent_update(page: int = 1):
     html = httpx.get(
@@ -81,19 +84,19 @@ async def get_recent_update(page: int = 1):
         main_genre = {"id": genre_id, "name": genre}
 
         mangas.append(
-            {
-                "id": id,
-                "title": title,
-                "description": description,
-                "main_genre": main_genre,
-                "image": image,
-            }
+            Manga(
+                id=id,
+                title=title,
+                description=description,
+                main_genre=main_genre,
+                image=image,
+            )
         )
 
     return mangas
 
 
-@router.get("/popular")
+@router.get("/popular", response_model=list[Manga])
 @cache(expire=360)
 async def get_popular(page: int = 1):
     html = httpx.get(
@@ -115,89 +118,40 @@ async def get_popular(page: int = 1):
         main_genre = {"id": genre_id, "name": genre}
 
         mangas.append(
-            {
-                "id": id,
-                "title": title,
-                "description": description,
-                "main_genre": main_genre,
-                "image": image,
-            }
+            Manga(
+                id=id,
+                title=title,
+                description=description,
+                main_genre=main_genre,
+                image=image,
+            )
         )
 
     return mangas
 
 
-@router.get("/{id}")
+@router.get("/genres", response_model=list[Genre])
 @cache(expire=360)
-async def get_manga(id: str):
-    html = httpx.get(app_url + "/manga/" + id, follow_redirects=True)
-
-    soup = BeautifulSoup(html.content, "html.parser")
-
-    title_tag = soup.find("td", text="Judul Komik")
-    title = title_tag.find_next_sibling("td").text.strip()
-
-    author_tag = soup.find("td", text="Pengarang")
-    author = author_tag.find_next_sibling("td").text.strip()
-
-    status_tag = soup.find("td", text="Status")
-    status = status_tag.find_next_sibling("td").text.strip()
-
-    image = soup.find("section", id="Informasi").find("img")["src"].split("?")[0]
-
-    genres = []
-    for genre in soup.find("li", class_="genre").find_all("a"):
-        id = genre["href"].split("/")[-2]
-        name = genre.text.strip()
-        genres.append({"id": id, "name": name})
-
-    chapters_section = soup.find("table", id="Daftar_Chapter")
-    chapters = []
-    for chapter in chapters_section.find_all("tr")[1:]:
-        id = chapter.find("a")["href"].split("/")[-2]
-        title = chapter.find("a").text.strip()
-        date = chapter.find("td", class_="tanggalseries").text.strip()
-        chapters.append({"id": id, "title": title, "date": date})
-
-    return {
-        "id": id,
-        "title": title,
-        "author": author,
-        "status": status,
-        "image": image,
-        "genres": genres,
-        "chapters": chapters,
-    }
-
-
-@router.get("/chapter/{id}")
-@cache(expire=360)
-async def get_chapter(id: str):
-    html = httpx.get(app_url + "/" + id, follow_redirects=True)
+async def get_genres():
+    html = httpx.get(app_url, follow_redirects=True)
 
     soup = BeautifulSoup(html.text, "html.parser")
+    genres = []
 
-    title_tag = soup.find("td", text="Judul")
-    title = title_tag.find_next_sibling("td").text.strip()
+    for genre in soup.find("ul", class_="genre").find_all("li"):
+        id = genre.find("a")["href"].split("/")[-2]
+        name = genre.find("a").text.strip()
+        genres.append(
+            Genre(
+                id=id,
+                name=name,
+            )
+        )
 
-    date_tag = soup.find("td", text="Tanggal Rilis")
-    date = date_tag.find_next_sibling("td").text.strip()
-
-    pages = []
-    for page in soup.find_all("img", class_="ww"):
-        page_number = page["id"]
-        image = page["src"]
-        pages.append({"page_number": page_number, "image": image})
-
-    return {
-        "id": id,
-        "title": title,
-        "date": date,
-        "pages": pages,
-    }
+    return genres
 
 
-@router.get("/genre/{id}")
+@router.get("/genres/{id}", response_model=list[Manga])
 @cache(expire=360)
 async def get_genre(id: str, page: int = 1):
     html = httpx.get(
@@ -218,13 +172,81 @@ async def get_genre(id: str, page: int = 1):
         main_genre = {"id": genre_id, "name": genre}
 
         mangas.append(
-            {
-                "id": id,
-                "title": title,
-                "description": description,
-                "main_genre": main_genre,
-                "image": image,
-            }
+            Manga(
+                id=id,
+                title=title,
+                description=description,
+                main_genre=main_genre,
+                image=image,
+            )
         )
 
     return mangas
+
+
+@router.get("/{id}", response_model=MangaDetail)
+@cache(expire=360)
+async def get_manga(id: str):
+    html = httpx.get(app_url + "/manga/" + id, follow_redirects=True)
+
+    soup = BeautifulSoup(html.content, "html.parser")
+
+    title_tag = soup.find("td", text="Judul Komik")
+    title = title_tag.find_next_sibling("td").text.strip()
+
+    description = soup.find("p", class_="desc").text.strip()
+
+    author_tag = soup.find("td", text="Pengarang")
+    author = author_tag.find_next_sibling("td").text.strip()
+
+    status_tag = soup.find("td", text="Status")
+    status = status_tag.find_next_sibling("td").text.strip()
+
+    image = soup.find("section", id="Informasi").find("img")["src"].split("?")[0]
+
+    genres = []
+    for genre in soup.find("li", class_="genre").find_all("a"):
+        id = genre["href"].split("/")[-2]
+        name = genre.text.strip()
+        genres.append(Genre(id=id, name=name))
+
+    chapters_section = soup.find("table", id="Daftar_Chapter")
+    chapters = []
+    for chapter in chapters_section.find_all("tr")[1:]:
+        id = chapter.find("a")["href"].split("/")[-2]
+        title = chapter.find("a").text.strip()
+        date = chapter.find("td", class_="tanggalseries").text.strip()
+        chapters.append(Chapter(id=id, title=title, date=date))
+
+    return MangaDetail(
+        id=id,
+        title=title,
+        description=description,
+        author=author,
+        status=status,
+        image=image,
+        genres=genres,
+        chapters=chapters,
+    )
+
+
+@router.get("/chapters/{id}", response_model=MangaChapter)
+@cache(expire=360)
+async def get_chapter(id: str):
+    html = httpx.get(app_url + "/" + id, follow_redirects=True)
+
+    soup = BeautifulSoup(html.text, "html.parser")
+
+    title_tag = soup.find("td", text="Judul")
+    title = title_tag.find_next_sibling("td").text.strip()
+
+    date_tag = soup.find("td", text="Tanggal Rilis")
+    date = date_tag.find_next_sibling("td").text.strip()
+
+    pages = []
+    for page in soup.find_all("img", class_="ww"):
+        page_number = page["id"]
+        image = page["src"]
+        pages.append(Pages(page_number=page_number, image=image))
+
+    return MangaChapter(id=id, title=title, date=date, pages=pages)
