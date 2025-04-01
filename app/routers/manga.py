@@ -18,15 +18,13 @@ async def lifespan(_: APIRouter) -> AsyncIterator[None]:
 
 
 router = APIRouter(lifespan=lifespan)
+app_url = "https://komiku.id"
+api_url = "https://api.komiku.id"
 
 
 @cache()
 async def get_cache():
     return 1
-
-
-app_url = "https://komiku.id"
-api_url = "https://api.komiku.id"
 
 
 @router.get("/search")
