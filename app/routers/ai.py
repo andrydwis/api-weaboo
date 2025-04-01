@@ -1,14 +1,11 @@
 import json
 import os
-from email import message
 
-from dotenv import load_dotenv
 from fastapi import APIRouter
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-load_dotenv()
 router = APIRouter()
 
 
