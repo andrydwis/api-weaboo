@@ -4,7 +4,8 @@ from typing import Any
 import httpx
 import yt_dlp
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+
+from app.models.tools import Metadata, VideoFormat
 
 router = APIRouter()
 
@@ -12,53 +13,12 @@ router = APIRouter()
 COOKIE_FILE = "cookies.txt"
 
 
-class VideoFormat(BaseModel):
-    format_id: str | None = Field(
-        default=None, description="Unique identifier for the format"
-    )
-    resolution: str | None = Field(
-        default=None, description="Video resolution or 'audio only'"
-    )
-    url: str | None = Field(default=None, description="Direct URL to the media")
-    has_audio: bool | None = Field(
-        default=None, description="Whether the format contains audio"
-    )
-    has_video: bool | None = Field(
-        default=None, description="Whether the format contains video"
-    )
-    bitrate: float | None = Field(
-        default=None, description="Audio bitrate in bits per second"
-    )
-    audio_codec: str | None = Field(default=None, description="Audio codec used")
-    ext: str | None = Field(default=None, description="File extension/container format")
-    file_size: int | None = Field(default=None, description="File size in bytes")
-    cookies: dict[str, Any] | None = Field(
-        default=None, description="Cookies required for download"
-    )
-
-
-class Metadata(BaseModel):
-    platform: str = Field(..., description="Source platform of the video")
-    title: str = Field(..., description="Title of the video")
-    duration: float | None = Field(default=None, description="Duration in seconds")
-    thumbnail: str | None = Field(
-        default=None, description="URL to the video thumbnail"
-    )
-    formats: list[VideoFormat] = Field(
-        ..., description="Available formats for download"
-    )
-
-
-from typing import Optional
-
-import httpx
-
 # Define the cookie file path globally or pass it as a parameter
 COOKIE_FILE = "cookies.txt"
 
 
 async def get_cookies(
-    platform: str, url: Optional[str] = None, cookie_file: str = "cookies.txt"
+    platform: str, url: str | None = None, cookie_file: str = "cookies.txt"
 ) -> bool:
     """
     Fetch cookies from the given URL and save them in Netscape HTTP Cookie File format.
@@ -185,22 +145,22 @@ async def download(
 
             # Filter formats to include MP4 video (with or without audio) and audio-only formats
             filtered_formats = [
-                {
-                    "format_id": fmt.get("format_id"),
-                    "resolution": (
+                VideoFormat(
+                    format_id=fmt.get("format_id"),
+                    resolution=(
                         fmt.get("resolution", "audio only")
                         if fmt.get("vcodec") != "none"
                         else "audio only"
                     ),
-                    "url": fmt.get("url"),
-                    "has_audio": fmt.get("acodec") != "none",
-                    "has_video": fmt.get("vcodec") != "none",
-                    "bitrate": fmt.get("abr"),
-                    "audio_codec": fmt.get("acodec"),
-                    "ext": fmt.get("ext"),
-                    "file_size": fmt.get("filesize") or fmt.get("filesize_approx"),
-                    "cookies": format_cookies(fmt.get("cookies")),
-                }
+                    url=fmt.get("url"),
+                    has_audio=fmt.get("acodec") != "none",
+                    has_video=fmt.get("vcodec") != "none",
+                    bitrate=fmt.get("abr"),
+                    audio_codec=fmt.get("acodec"),
+                    ext=fmt.get("ext"),
+                    file_size=fmt.get("filesize") or fmt.get("filesize_approx"),
+                    cookies=format_cookies(fmt.get("cookies")),
+                )
                 for fmt in info.get("formats", [])
                 if (
                     (
@@ -213,16 +173,13 @@ async def download(
                 and not fmt.get("url", "").endswith(".m3u8")  # Exclude .m3u8 playlists
             ]
 
-            # Prepare response data
-            metadata = {
-                "platform": platform,
-                "title": info.get("title", "Unknown Title"),
-                "duration": info.get("duration"),
-                "thumbnail": info.get("thumbnail"),
-                "formats": filtered_formats,
-            }
-
-            return metadata
+            return Metadata(
+                platform=platform,
+                title=info.get("title", "Unknown Title"),
+                duration=info.get("duration"),
+                thumbnail=info.get("thumbnail"),
+                formats=filtered_formats,
+            )
 
         except Exception as e:
             raise HTTPException(

@@ -10,8 +10,16 @@ from fastapi import APIRouter, HTTPException
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
-from idna import decode
 from redis import asyncio as aioredis
+
+from app.models.anime import (
+    Anime,
+    AnimeDetail,
+    AnimePagination,
+    Episodes,
+    Genre,
+    Pagination,
+)
 
 
 @asynccontextmanager
@@ -30,7 +38,7 @@ async def get_cache():
     return 1
 
 
-@router.get("/search")
+@router.get("/search", response_model=list[Anime])
 async def search(query: str):
     html = httpx.get(
         app_url + "/?s=" + query + "&post_type=anime",
@@ -54,17 +62,18 @@ async def search(query: str):
         )
         image = anime.find("img")["src"]
         animes.append(
-            {
-                "id": id,
-                "title": title,
-                "image": image,
-            }
+            Anime(
+                id=id,
+                title=title,
+                episodes=None,
+                image=image,
+            )
         )
 
     return animes
 
 
-@router.get("/ongoing-anime")
+@router.get("/ongoing-anime", response_model=AnimePagination)
 @cache(expire=360)
 async def ongoing_anime(page: int = 1):
     html = httpx.get(
@@ -80,30 +89,30 @@ async def ongoing_anime(page: int = 1):
     for anime in animes_section.find_all("li"):
         id = anime.find("a")["href"].split("/")[-2]
         title = anime.find("h2", class_="jdlflm").text
-        episodes = anime.find("div", class_="epz").text.split(" ")[2]
+        episodes = int(anime.find("div", class_="epz").text.split(" ")[2])
         image = anime.find("img")["src"]
         animes.append(
-            {
-                "id": id,
-                "title": title,
-                "episodes": episodes,
-                "image": image,
-            }
+            Anime(
+                id=id,
+                title=title,
+                episodes=episodes,
+                image=image,
+            )
         )
 
     pagination = soup.find("div", class_="pagination")
     has_next_page = pagination.find("a", class_="next page-numbers") is not None
     has_prev_page = pagination.find("a", class_="prev page-numbers") is not None
 
-    return {
-        "animes": animes,
-        "pagination": {
-            "total_items": len(animes),
-            "current_page": page,
-            "has_next_page": has_next_page,
-            "has_prev_page": has_prev_page,
-        },
-    }
+    return AnimePagination(
+        animes=animes,
+        pagination=Pagination(
+            total_items=len(animes),
+            current_page=page,
+            has_next_page=has_next_page,
+            has_prev_page=has_prev_page,
+        ),
+    )
 
 
 @router.get("/genres")
@@ -120,18 +129,18 @@ async def get_genres():
     genres_section = soup.find("ul", class_="genres").find("li")
     for genre in genres_section.find_all("a"):
         id = genre["href"].split("/")[-2]
-        title = genre.text
+        name = genre.text.strip()
         genres.append(
-            {
-                "id": id,
-                "title": title,
-            }
+            Genre(
+                id=id,
+                name=name,
+            )
         )
 
     return genres
 
 
-@router.get("/genres/{id}")
+@router.get("/genres/{id}", response_model=AnimePagination)
 @cache(expire=360)
 async def get_genres_anime(id: str, page: int = 1):
     html = httpx.get(
@@ -139,7 +148,9 @@ async def get_genres_anime(id: str, page: int = 1):
         follow_redirects=True,
     )
 
-    if html.url != app_url + "/genres" + "/" + id + "/page" + "/" + str(page):
+    if html.url != (
+        app_url + "/genres" + "/" + id + "/page" + "/" + str(page)
+    ) and html.url != (app_url + "/genres" + "/" + id + "/"):
         raise HTTPException(status_code=404, detail="Genre not found")
 
     soup = BeautifulSoup(html.text, "html.parser")
@@ -150,38 +161,36 @@ async def get_genres_anime(id: str, page: int = 1):
             anime.find("div", class_="col-anime-title").find("a")["href"].split("/")[-2]
         )
         title = anime.find("div", class_="col-anime-title").find("a").text
-        episodes = anime.find("div", class_="col-anime-eps").text.split(" ")[0]
         image = anime.find("img")["src"]
         animes.append(
-            {
-                "id": id,
-                "title": title,
-                "episodes": episodes,
-                "image": image,
-            }
+            Anime(
+                id=id,
+                title=title,
+                episodes=None,
+                image=image,
+            )
         )
 
     pagination = soup.find("div", class_="pagination")
     has_next_page = pagination.find("a", class_="next page-numbers") is not None
     has_prev_page = pagination.find("a", class_="prev page-numbers") is not None
 
-    return {
-        "animes": animes,
-        "pagination": {
-            "total_items": len(animes),
-            "current_page": page,
-            "has_next_page": has_next_page,
-            "has_prev_page": has_prev_page,
-        },
-    }
+    return AnimePagination(
+        animes=animes,
+        pagination=Pagination(
+            total_items=len(animes),
+            current_page=page,
+            has_next_page=has_next_page,
+            has_prev_page=has_prev_page,
+        ),
+    )
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=AnimeDetail)
 @cache(expire=360)
 async def get_anime(id: str):
     html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
 
-    # if redirected to other page, return error
     if html.url != app_url + "/anime/" + id:
         raise HTTPException(status_code=404, detail="Anime not found")
 
@@ -189,126 +198,86 @@ async def get_anime(id: str):
 
     info_section = soup.find("div", class_="infozingle")
 
-    title = (
-        info_section.find("b", text="Judul")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
-    )
+    title = info_section.find("b", text="Judul").parent.text.split(":")[1].strip()
 
     japanese_title = (
-        info_section.find("b", text="Japanese")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
+        info_section.find("b", text="Japanese").parent.text.split(":")[1].strip()
     )
 
-    description = soup.find("div", class_="sinopc").get_text(strip=True)
+    description = soup.find("div", class_="sinopc").text.strip()
 
     image = soup.find("div", class_="fotoanime").find("img")["src"]
 
-    score = (
-        info_section.find("b", text="Skor")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
-    )
+    score = info_section.find("b", text="Skor").parent.text.split(":")[1].strip()
 
     producers = (
         info_section.find("b", text="Produser")
-        .parent.get_text(strip=True)
+        .parent.text.strip()
         .split(":")[1]
-        .strip()
         .split(", ")
     )
 
-    type = (
-        info_section.find("b", text="Tipe")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
-    )
+    type = info_section.find("b", text="Tipe").parent.text.split(":")[1].strip()
 
-    status = (
-        info_section.find("b", text="Status")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
-    )
+    status = info_section.find("b", text="Status").parent.text.split(":")[1].strip()
 
     total_episodes = (
-        info_section.find("b", text="Total Episode")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
+        info_section.find("b", text="Total Episode").parent.text.split(":")[1].strip()
     )
 
-    duration = (
-        info_section.find("b", text="Durasi")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
-    )
+    duration = info_section.find("b", text="Durasi").parent.text.split(":")[1].strip()
 
     release_date = (
-        info_section.find("b", text="Tanggal Rilis")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
+        info_section.find("b", text="Tanggal Rilis").parent.text.split(":")[1].strip()
     )
 
-    Studio = (
-        info_section.find("b", text="Studio")
-        .parent.get_text(strip=True)
-        .split(":")[1]
-        .strip()
-    )
+    studio = info_section.find("b", text="Studio").parent.text.split(":")[1].strip()
 
     genres_section = info_section.find("b", text="Genre").parent
     genres = []
     for genre in genres_section.find_all("a"):
         id = genre["href"].split("/")[-2]
-        name = genre.get_text(strip=True)
-        genres.append({"id": id, "name": name})
+        name = genre.text.strip()
+        genres.append(Genre(id=id, name=name))
 
     episodes_section = soup.find_all("div", class_="episodelist")
     episodes_section = episodes_section[1]
-    print(episodes_section.prettify())
     episodes = []
     for episode in episodes_section.find("ul").find_all("li"):
         print(episode.prettify())
         id = episode.find("a")["href"].split("/")[-2]
         title = (
-            re.search(r"\b\d+\b", episode.find("a").get_text(strip=True)) or [None]
-        )[0] or episode.find("a").get_text(strip=True)
-        episodes.append({"id": id, "title": title})
+            re.search(r"\b\d+\b", episode.find("a").text.strip() or [None])[0]
+            or episode.find("a").text.strip()
+        )
+        episodes.append(Episodes(id=id, title=title))
 
     recommendations_section = soup.find("div", id="recommend-anime-series")
     recommendations = []
     for recommendation in recommendations_section.find_all("div", class_="isi-konten"):
         id = recommendation.find("a")["href"].split("/")[-2]
-        title = recommendation.find("span", class_="judul-anime").get_text(strip=True)
+        title = recommendation.find("span", class_="judul-anime").text.strip()
         image = recommendation.find("img")["src"]
-        recommendations.append({"id": id, "title": title, "image": image})
+        recommendations.append(Anime(id=id, title=title, episodes=None, image=image))
 
-    return {
-        "id": id,
-        "title": title,
-        "japanese_title": japanese_title,
-        "description": description,
-        "image": image,
-        "score": score,
-        "type": type,
-        "status": status,
-        "total_episodes": total_episodes,
-        "duration": duration,
-        "release_date": release_date,
-        "producers": producers,
-        "Studio": Studio,
-        "genres": genres,
-        "episodes": episodes,
-        "recommendations": recommendations,
-    }
+    return AnimeDetail(
+        id=id,
+        title=title,
+        japanese_title=japanese_title,
+        description=description,
+        image=image,
+        score=score,
+        type=type,
+        status=status,
+        total_episodes=total_episodes,
+        duration=duration,
+        release_date=release_date,
+        producers=producers,
+        studio=studio,
+        genres=genres,
+        episodes=episodes,
+        recommendations=recommendations,
+    )
 
 
 @router.get("/{id}/episodes/{episode_id}")
@@ -403,7 +372,7 @@ async def get_server(id: str, server_id: str):
     }
 
 
-def getNonce():
+def getNonce() -> dict:
     json = httpx.post(
         url=app_url + "/wp-admin/admin-ajax.php",
         data={

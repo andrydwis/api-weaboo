@@ -4,14 +4,10 @@ import os
 from fastapi import APIRouter
 from google import genai
 from google.genai import types
-from pydantic import BaseModel, Field
+
+from app.models.ai import ChatResponse, Message
 
 router = APIRouter()
-
-
-class Message(BaseModel):
-    role: str = Field(examples=["user"])
-    content: str = Field(examples=["Nama kamu siapa?"])
 
 
 @router.post("/chat")
@@ -55,12 +51,12 @@ async def chat(messages: list[Message]):
         config=config,
     )
 
-    return {
-        "role": "assistant",
-        "content": response.text,
-        "model": model,
-        "histories": messages,
-    }
+    return ChatResponse(
+        role="assistant",
+        content=response.text,
+        model=model,
+        histories=messages,
+    )
 
 
 @router.post("/follow-up")
@@ -115,9 +111,9 @@ async def follow_up(messages: list[Message]):
 
     questions = json.loads(response.text)
 
-    return {
-        "role": "assistant",
-        "content": questions,
-        "model": model,
-        "histories": messages,
-    }
+    return ChatResponse(
+        role="assistant",
+        content=questions,
+        model=model,
+        histories=messages,
+    )

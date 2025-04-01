@@ -10,6 +10,8 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from redis import asyncio as aioredis
 
+from app.models.news import News
+
 
 @asynccontextmanager
 async def lifespan(_: APIRouter) -> AsyncIterator[None]:
@@ -27,7 +29,7 @@ async def get_cache():
     return 1
 
 
-@router.get("/recent-news")
+@router.get("/recent-news", response_model=list[News])
 @cache(expire=360)
 async def get_recent_news():
     html = httpx.get(
@@ -40,8 +42,6 @@ async def get_recent_news():
     news = []
 
     for news_item in soup.select("div.herald.box"):
-        # https://www.animenewsnetwork.com/news/2025-03-29/medalist-anime-gets-2nd-season/.223026
-        # get all after news/
         id = news_item.find("h3").find("a")["href"].replace("/news/", "")
         title = news_item.find("h3").text.strip()
         category = news_item.find("div", class_="category").text.strip()
@@ -59,14 +59,14 @@ async def get_recent_news():
 
         if category == "news":
             news.append(
-                {
-                    "id": id,
-                    "title": title,
-                    "description": description,
-                    "category": category,
-                    "image": image,
-                    "published_at": published_at,
-                }
+                News(
+                    id=id,
+                    title=title,
+                    description=description,
+                    category=category,
+                    image=image,
+                    published_at=published_at,
+                )
             )
 
     return news
@@ -93,10 +93,11 @@ async def get_news(id: str):
     dt_tz = dt.astimezone(tz)
     published_at = dt_tz.strftime("%d %B %Y, %H:%M")
 
-    return {
-        "id": id,
-        "title": title,
-        "description": description,
-        "image": image,
-        "published_at": published_at,
-    }
+    return News(
+        id=id,
+        title=title,
+        description=description,
+        category="news",
+        image=image,
+        published_at=published_at,
+    )
