@@ -16,9 +16,13 @@ from app.models.anime import (
     Anime,
     AnimeDetail,
     AnimePagination,
+    Download,
     Episodes,
+    EpisodesDetail,
     Genre,
     Pagination,
+    Server,
+    ServerDetail,
 )
 
 
@@ -115,7 +119,7 @@ async def ongoing_anime(page: int = 1):
     )
 
 
-@router.get("/genres")
+@router.get("/genres", response_model=list[Genre])
 @cache(expire=360)
 async def get_genres():
     html = httpx.get(
@@ -280,7 +284,7 @@ async def get_anime(id: str):
     )
 
 
-@router.get("/{id}/episodes/{episode_id}")
+@router.get("/{id}/episodes/{episode_id}", response_model=EpisodesDetail)
 @cache(expire=360)
 async def get_episode(id: str, episode_id: str):
     html = httpx.get(
@@ -310,10 +314,10 @@ async def get_episode(id: str, episode_id: str):
             server_name = server.get_text(strip=True).lower()
 
             servers.append(
-                {
-                    "id": server_id,
-                    "name": server_name,
-                }
+                Server(
+                    id=server_id,
+                    name=server_name,
+                )
             )
         qualtiy_servers[quality_name] = servers
 
@@ -327,24 +331,24 @@ async def get_episode(id: str, episode_id: str):
             server_url = server["href"]
 
             servers.append(
-                {
-                    "name": server_name,
-                    "url": server_url,
-                }
+                Download(
+                    name=server_name,
+                    url=server_url,
+                )
             )
         download_servers[quality_name] = servers
 
-    return {
-        "id": id,
-        "episode_id": episode_id,
-        "title": title,
-        "default_stream_url": default_stream_url,
-        "servers": qualtiy_servers,
-        "downloads": download_servers,
-    }
+    return EpisodesDetail(
+        id=id,
+        episode_id=episode_id,
+        title=title,
+        default_stream_url=default_stream_url,
+        servers=qualtiy_servers,
+        downloads=download_servers,
+    )
 
 
-@router.get("/{id}/servers/{server_id}")
+@router.get("/{id}/servers/{server_id}", response_model=ServerDetail)
 @cache(expire=360)
 async def get_server(id: str, server_id: str):
     nonce = getNonce()
@@ -365,11 +369,11 @@ async def get_server(id: str, server_id: str):
     html = base64.b64decode(get_server["data"]).decode("utf-8")
     soup = BeautifulSoup(html, "html.parser")
 
-    return {
-        "id": id,
-        "server_id": server_id,
-        "url": soup.find("iframe")["src"],
-    }
+    return ServerDetail(
+        id=id,
+        server_id=server_id,
+        url=soup.find("iframe")["src"],
+    )
 
 
 def getNonce() -> dict:

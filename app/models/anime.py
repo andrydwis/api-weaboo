@@ -51,3 +51,45 @@ class AnimeDetail(BaseModel):
     genres: list[Genre] | None = Field(examples=[[Genre(id="action", name="Action")]])
     episodes: list[Episodes] | None
     recommendations: list[Anime] | None
+
+
+class Server(BaseModel):
+    id: str = Field(examples=["otakudesu"])
+    name: str = Field(examples=["OtakuDesu"])
+
+
+class Download(BaseModel):
+    name: str = Field(examples=["OtakuDesu"])
+    url: str = Field(
+        examples=["https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1"]
+    )
+
+
+class EpisodesDetail(BaseModel):
+    id: str = Field(examples=["solo-level-s2-sub-indo"])
+    episode_id: str = Field(examples=["solo-level-s2-sub-indo-episode-1"])
+    title: str = Field(examples=["Solo Leveling Season 2 Episode 1"])
+    default_stream_url: str = Field(
+        examples=["https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1"]
+    )
+    servers: list[dict[str, Server] | None] = Field(
+        example=[{"480p": {"id": "otakudesu", "name": "OtakuDesu"}}]
+    )
+    downloads: list[dict[str, Download] | None] = Field(
+        example=[
+            {
+                "480p": {
+                    "name": "OtakuDesu",
+                    "url": "https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1",
+                }
+            }
+        ]
+    )
+
+
+class ServerDetail(BaseModel):
+    id: str = Field(examples=["otakudesu"])
+    server_id: str = Field(examples=["otakudesu"])
+    url: str = Field(
+        examples=["https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1"]
+    )

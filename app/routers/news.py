@@ -72,7 +72,7 @@ async def get_recent_news():
     return news
 
 
-@router.get("/get-news")
+@router.get("/get-news", response_model=News)
 @cache(expire=360)
 async def get_news(id: str):
     html = httpx.get(app_url + "/news/" + id, follow_redirects=True)
