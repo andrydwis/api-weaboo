@@ -77,7 +77,7 @@ async def search(query: str):
     return animes
 
 
-@router.get("/ongoing-anime", response_model=AnimePagination)
+@router.get("/ongoing", response_model=AnimePagination)
 @cache(expire=360)
 async def ongoing_anime(page: int = 1):
     html = httpx.get(
