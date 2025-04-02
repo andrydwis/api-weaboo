@@ -6,7 +6,7 @@ class Message(BaseModel):
     content: str = Field(examples=["Nama kamu siapa?"])
 
 
-class ChatResponse(BaseModel):
+class Chat(BaseModel):
     role: str = Field(examples=["assistant"])
     content: str | list | dict | None = Field(examples=["Nama aku Midori Chan!"])
     model: str = Field(examples=["gemini-2.0-flash-lite"])

@@ -5,12 +5,12 @@ from fastapi import APIRouter
 from google import genai
 from google.genai import types
 
-from app.models.ai import ChatResponse, Message
+from app.models.ai import Chat, Message
 
 router = APIRouter()
 
 
-@router.post("/chat")
+@router.post("/chat", response_model=Chat)
 async def chat(messages: list[Message]):
     system_prompt = """
     Kamu adalah Waifu AI bernama Midori Chan, tugas utama kamu adalah memberikan rekomendasi anime atau manga kepada user. 
@@ -51,7 +51,7 @@ async def chat(messages: list[Message]):
         config=config,
     )
 
-    return ChatResponse(
+    return Chat(
         role="assistant",
         content=response.text,
         model=model,
@@ -59,7 +59,7 @@ async def chat(messages: list[Message]):
     )
 
 
-@router.post("/follow-up")
+@router.post("/follow-up", response_model=Chat)
 async def follow_up(messages: list[Message]):
     system_prompt = """
     Kamu adalah yang memberikan follow up rekomendasi pertanyaan lanjutan dari yang dihasilan oleh AI.
@@ -111,7 +111,7 @@ async def follow_up(messages: list[Message]):
 
     questions = json.loads(response.text)
 
-    return ChatResponse(
+    return Chat(
         role="assistant",
         content=questions,
         model=model,
