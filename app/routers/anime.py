@@ -194,7 +194,7 @@ async def get_genres_anime(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=AnimeDetail)
-# @cache(expire=360)
+@cache(expire=360)
 async def get_anime(id: str):
     html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
 
