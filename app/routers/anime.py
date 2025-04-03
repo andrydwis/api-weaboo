@@ -194,7 +194,7 @@ async def get_genres_anime(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=AnimeDetail)
-@cache(expire=360)
+# @cache(expire=360)
 async def get_anime(id: str):
     html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
 
@@ -252,11 +252,13 @@ async def get_anime(id: str):
     episodes = []
     for episode in episodes_section.find("ul").find_all("li"):
         episode_id = episode.find("a")["href"].split("/")[-2]
-        episode_title = (
-            re.search(r"\b\d+\b", episode.find("a").text.strip() or [None])[0]
-            or episode.find("a").text.strip()
-        )
-        episodes.append(Episodes(id=episode_id, title=episode_title))
+        # Extract the episode number after the word "episode"
+        episode_title = episode.find("a").text.strip().lower()
+        match = re.search(r"\bepisode\s+(\d+)\b", episode_title, re.IGNORECASE)
+
+        # If a match is found, extract the episode number; otherwise, use the full title
+        episode_number = match.group(1) if match else episode_title
+        episodes.append(Episodes(id=episode_id, title=episode_number))
 
     recommendations_section = soup.find("div", id="recommend-anime-series")
     recommendations = []
