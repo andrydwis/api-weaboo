@@ -93,7 +93,10 @@ async def ongoing_anime(page: int = 1):
     for anime in animes_section.find_all("li"):
         id = anime.find("a")["href"].split("/")[-2]
         title = anime.find("h2", class_="jdlflm").text
-        episodes = int(anime.find("div", class_="epz").text.split(" ")[2])
+        try:
+            episodes = int(anime.find("div", class_="epz").text.split(" ")[2])
+        except (AttributeError, IndexError, ValueError):
+            episodes = None
         image = anime.find("img")["src"]
         animes.append(
             Anime(
