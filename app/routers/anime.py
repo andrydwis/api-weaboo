@@ -243,20 +243,20 @@ async def get_anime(id: str):
     genres_section = info_section.find("b", text="Genre").parent
     genres = []
     for genre in genres_section.find_all("a"):
-        id = genre["href"].split("/")[-2]
-        name = genre.text.strip()
-        genres.append(Genre(id=id, name=name))
+        genre_id = genre["href"].split("/")[-2]
+        genre_name = genre.text.strip()
+        genres.append(Genre(id=genre_id, name=genre_name))
 
     episodes_section = soup.find_all("div", class_="episodelist")
     episodes_section = episodes_section[1]
     episodes = []
     for episode in episodes_section.find("ul").find_all("li"):
-        id = episode.find("a")["href"].split("/")[-2]
-        title = (
+        episode_id = episode.find("a")["href"].split("/")[-2]
+        episode_title = (
             re.search(r"\b\d+\b", episode.find("a").text.strip() or [None])[0]
             or episode.find("a").text.strip()
         )
-        episodes.append(Episodes(id=id, title=title))
+        episodes.append(Episodes(id=episode_id, title=episode_title))
 
     recommendations_section = soup.find("div", id="recommend-anime-series")
     recommendations = []
