@@ -251,7 +251,6 @@ async def get_anime(id: str):
     episodes_section = episodes_section[1]
     episodes = []
     for episode in episodes_section.find("ul").find_all("li"):
-        print(episode.prettify())
         id = episode.find("a")["href"].split("/")[-2]
         title = (
             re.search(r"\b\d+\b", episode.find("a").text.strip() or [None])[0]
@@ -262,10 +261,19 @@ async def get_anime(id: str):
     recommendations_section = soup.find("div", id="recommend-anime-series")
     recommendations = []
     for recommendation in recommendations_section.find_all("div", class_="isi-konten"):
-        id = recommendation.find("a")["href"].split("/")[-2]
-        title = recommendation.find("span", class_="judul-anime").text.strip()
-        image = recommendation.find("img")["src"]
-        recommendations.append(Anime(id=id, title=title, episodes=None, image=image))
+        recommendation_id = recommendation.find("a")["href"].split("/")[-2]
+        recommendation_title = recommendation.find(
+            "span", class_="judul-anime"
+        ).text.strip()
+        recommendation_image = recommendation.find("img")["src"]
+        recommendations.append(
+            Anime(
+                id=recommendation_id,
+                title=recommendation_title,
+                episodes=None,
+                image=recommendation_image,
+            )
+        )
 
     return AnimeDetail(
         id=id,
