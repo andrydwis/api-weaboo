@@ -337,7 +337,7 @@ async def get_episode(id: str, episode_id: str):
     downloads_section = soup.find("div", class_="download")
     download_servers = {}
     for download in downloads_section.find_all("li"):
-        quality_name = download.find("strong").get_text(strip=True).split(" ")[1]
+        quality_name = download.find("strong").get_text(strip=True)
         servers = []
         for server in download.find_all("a"):
             server_name = server.get_text(strip=True).lower()
