@@ -72,16 +72,18 @@ class EpisodesDetail(BaseModel):
     default_stream_url: str = Field(
         examples=["https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1"]
     )
-    servers: list[dict[str, Server] | None] = Field(
+    servers: dict[str, list[Server]] | None = Field(
         example=[{"480p": {"id": "otakudesu", "name": "OtakuDesu"}}]
     )
-    downloads: list[dict[str, Download] | None] = Field(
+    downloads: dict[str, list[Download]] | None = Field(
         example=[
             {
-                "480p": {
-                    "name": "OtakuDesu",
-                    "url": "https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1",
-                }
+                "480p": [
+                    {
+                        "name": "OtakuDesu",
+                        "url": "https://otakudesu.cloud/episode/solo-level-s2-sub-indo-episode-1",
+                    }
+                ]
             }
         ]
     )
