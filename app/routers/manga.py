@@ -185,7 +185,7 @@ async def get_genre(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=MangaDetail)
-# @cache(expire=360)
+@cache(expire=360)
 async def get_manga(id: str):
     html = httpx.get(app_url + "/manga/" + id, follow_redirects=True)
 
@@ -204,10 +204,11 @@ async def get_manga(id: str):
 
     image = soup.find("section", id="Informasi").find("img")["src"].split("?")[0]
 
+    genres_section = soup.find("ul", class_="genre")
     genres = []
-    for genre in soup.find("li", class_="genre").find_all("a"):
-        genre_id = genre["href"].split("/")[-2]
-        genre_name = genre.text.strip()
+    for genre in genres_section.find_all("li"):
+        genre_id = genre.find("a")["href"].split("/")[-2]
+        genre_name = genre.find("a").text.strip()
         genres.append(Genre(id=genre_id, name=genre_name))
 
     chapters_section = soup.find("table", id="Daftar_Chapter")
@@ -221,7 +222,6 @@ async def get_manga(id: str):
     recommendation_section = soup.find("section", id="Spoiler")
     recommendations = []
     for recommendation in recommendation_section.find_all("div", class_="grd"):
-        print(recommendation.prettify())
         recommendation_id = recommendation.find("a")["href"].split("/")[-2]
         recommendation_title = recommendation.find("div", class_="h4").text.strip()
         recommendation_description = recommendation.find("p").text.strip()
