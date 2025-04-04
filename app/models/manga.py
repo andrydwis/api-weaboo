@@ -40,6 +40,7 @@ class MangaDetail(BaseModel):
     )
     genres: list[Genre]
     chapters: list[Chapter]
+    recommendations: list[Manga]
 
 
 class MangaChapter(BaseModel):

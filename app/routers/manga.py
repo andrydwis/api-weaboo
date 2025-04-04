@@ -47,7 +47,7 @@ async def search(query: str):
         image = manga.find("img")["src"].split("?")[0]
         genre = manga.find("div", class_="tpe1_inf").text.strip().split(" ")[-1]
         genre_id = genre.lower().replace(" ", "-")
-        main_genre = {"id": genre_id, "name": genre}
+        main_genre = Genre(id=genre_id, name=genre)
 
         mangas.append(
             Manga(
@@ -81,7 +81,7 @@ async def get_recent_update(page: int = 1):
         image = manga.find("img")["src"].split("?")[0]
         genre = manga.find("div", class_="tpe1_inf").text.strip().split(" ")[-1]
         genre_id = genre.lower().replace(" ", "-")
-        main_genre = {"id": genre_id, "name": genre}
+        main_genre = Genre(id=genre_id, name=genre)
 
         mangas.append(
             Manga(
@@ -115,7 +115,7 @@ async def get_popular(page: int = 1):
         image = manga.find("img")["src"].split("?")[0]
         genre = manga.find("div", class_="tpe1_inf").text.strip().split(" ")[-1]
         genre_id = genre.lower().replace(" ", "-")
-        main_genre = {"id": genre_id, "name": genre}
+        main_genre = Genre(id=genre_id, name=genre)
 
         mangas.append(
             Manga(
@@ -169,7 +169,7 @@ async def get_genre(id: str, page: int = 1):
         image = manga.find("img")["src"].split("?")[0]
         genre = manga.find("div", class_="tpe1_inf").text.strip().split(" ")[-1]
         genre_id = genre.lower().replace(" ", "-")
-        main_genre = {"id": genre_id, "name": genre}
+        main_genre = Genre(id=genre_id, name=genre)
 
         mangas.append(
             Manga(
@@ -185,7 +185,7 @@ async def get_genre(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=MangaDetail)
-@cache(expire=360)
+# @cache(expire=360)
 async def get_manga(id: str):
     html = httpx.get(app_url + "/manga/" + id, follow_redirects=True)
 
@@ -206,17 +206,40 @@ async def get_manga(id: str):
 
     genres = []
     for genre in soup.find("li", class_="genre").find_all("a"):
-        id = genre["href"].split("/")[-2]
-        name = genre.text.strip()
-        genres.append(Genre(id=id, name=name))
+        genre_id = genre["href"].split("/")[-2]
+        genre_name = genre.text.strip()
+        genres.append(Genre(id=genre_id, name=genre_name))
 
     chapters_section = soup.find("table", id="Daftar_Chapter")
     chapters = []
     for chapter in chapters_section.find_all("tr")[1:]:
-        id = chapter.find("a")["href"].split("/")[-2]
-        title = chapter.find("a").text.strip()
+        chapter_id = chapter.find("a")["href"].split("/")[-2]
+        chapter_title = chapter.find("a").text.strip()
         date = chapter.find("td", class_="tanggalseries").text.strip()
-        chapters.append(Chapter(id=id, title=title, date=date))
+        chapters.append(Chapter(id=chapter_id, title=chapter_title, date=date))
+
+    recommendation_section = soup.find("section", id="Spoiler")
+    recommendations = []
+    for recommendation in recommendation_section.find_all("div", class_="grd"):
+        print(recommendation.prettify())
+        recommendation_id = recommendation.find("a")["href"].split("/")[-2]
+        recommendation_title = recommendation.find("div", class_="h4").text.strip()
+        recommendation_description = recommendation.find("p").text.strip()
+        recommendation_image = recommendation.find("img")["data-src"].split("?")[0]
+        genre = (
+            recommendation.find("div", class_="tpe1_inf").text.strip().split(" ")[-1]
+        )
+        genre_id = genre.lower().replace(" ", "-")
+        main_genre = Genre(id=genre_id, name=genre)
+        recommendations.append(
+            Manga(
+                id=recommendation_id,
+                title=recommendation_title,
+                description=recommendation_description,
+                main_genre=main_genre,
+                image=recommendation_image,
+            )
+        )
 
     return MangaDetail(
         id=id,
@@ -227,6 +250,7 @@ async def get_manga(id: str):
         image=image,
         genres=genres,
         chapters=chapters,
+        recommendations=recommendations,
     )
 
 
