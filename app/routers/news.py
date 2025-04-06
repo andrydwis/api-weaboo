@@ -76,7 +76,7 @@ async def get_recent_news():
 
 
 @router.get("/{id}", response_model=News)
-@cache(expire=360)
+# @cache(expire=360)
 async def get_news(id: str):
     id = base64.b64decode(id).decode("utf-8")
     html = httpx.get(app_url + "/news/" + id, follow_redirects=True)
@@ -84,10 +84,19 @@ async def get_news(id: str):
     soup = BeautifulSoup(html.content, "html.parser")
 
     title = soup.find("h1").text.strip().replace("News\n", "")
-    description = soup.find("div", class_="meat").prettify()
+
+    description = soup.find("div", class_="meat")
+
+    for img_tag in description.find_all("img"):
+        if img_tag.has_attr("data-src"):
+            img_tag["src"] = "https://cdn.animenewsnetwork.com" + img_tag["data-src"]
+            del img_tag["data-src"]
+
+    description = description.prettify()
+
     image = (
         "https://cdn.animenewsnetwork.com"
-        + soup.find("div", class_="meat").find("img")["data-src"]
+        + soup.find("div", class_="meat").find("img")["src"]
     )
 
     # parse datetime
