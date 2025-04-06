@@ -62,7 +62,7 @@ async def search(query: str):
     return mangas
 
 
-@router.get("/recent-update", response_model=list[Manga])
+@router.get("/recent", response_model=list[Manga])
 @cache(expire=360)
 async def get_recent_update(page: int = 1):
     html = httpx.get(
@@ -254,10 +254,10 @@ async def get_manga(id: str):
     )
 
 
-@router.get("/chapters/{id}", response_model=MangaChapter)
+@router.get("/{id}/chapters/{chapter_id}", response_model=MangaChapter)
 @cache(expire=360)
-async def get_chapter(id: str):
-    html = httpx.get(app_url + "/" + id, follow_redirects=True)
+async def get_chapter(id: str, chapter_id: str):
+    html = httpx.get(app_url + "/" + chapter_id, follow_redirects=True)
 
     soup = BeautifulSoup(html.text, "html.parser")
 

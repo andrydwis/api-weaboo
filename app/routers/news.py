@@ -1,3 +1,4 @@
+import base64
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -29,7 +30,7 @@ async def get_cache():
     return 1
 
 
-@router.get("/recent-news", response_model=list[News])
+@router.get("/recent", response_model=list[News])
 @cache(expire=360)
 async def get_recent_news():
     html = httpx.get(
@@ -42,7 +43,9 @@ async def get_recent_news():
     news = []
 
     for news_item in soup.select("div.herald.box"):
-        id = news_item.find("h3").find("a")["href"].replace("/news/", "")
+        id = base64.b64encode(
+            news_item.find("h3").find("a")["href"].replace("/news/", "").encode("utf-8")
+        ).decode("utf-8")
         title = news_item.find("h3").text.strip()
         category = news_item.find("div", class_="category").text.strip()
         description = news_item.find("div", class_="snippet").text.strip()
@@ -72,9 +75,10 @@ async def get_recent_news():
     return news
 
 
-@router.get("/get-news", response_model=News)
+@router.get("/{id}", response_model=News)
 @cache(expire=360)
 async def get_news(id: str):
+    id = base64.b64decode(id).decode("utf-8")
     html = httpx.get(app_url + "/news/" + id, follow_redirects=True)
 
     soup = BeautifulSoup(html.content, "html.parser")
