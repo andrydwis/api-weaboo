@@ -273,4 +273,4 @@ async def get_chapter(id: str, chapter_id: str):
         image = page["src"]
         pages.append(Pages(page_number=page_number, image=image))
 
-    return MangaChapter(id=id, title=title, date=date, pages=pages)
+    return MangaChapter(id=chapter_id, title=title, date=date, pages=pages)
