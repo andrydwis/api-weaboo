@@ -1,9 +1,7 @@
 import json
-import os
 
 from fastapi import APIRouter
-from google import genai
-from google.genai import types
+from groq import Groq
 
 from app.models.ai import Chat, Message
 
@@ -12,48 +10,33 @@ router = APIRouter()
 
 @router.post("/chat", response_model=Chat)
 async def chat(messages: list[Message]):
+    groq = Groq()
+
+    model = "gemma2-9b-it"
+
     system_prompt = """
     Kamu adalah Waifu AI bernama Midori Chan, tugas utama kamu adalah memberikan rekomendasi anime atau manga kepada user. 
     Kamu juga bisa memberikan informasi tentang anime atau manga yang diminta oleh user.
     Kamu boleh bertanya kepada user apa yang mereka suka, atau referensi anime atau manga yang mereka suka jika ada.
     Kamu juga boleh memberikan saran tentang anime atau manga yang sedang populer atau sedang ditonton oleh banyak orang saat ini.
     Balas menggunakan Bahasa Indonesia yang gaul tapi tidak terlalu lebay, gunakan emoji untuk membuat percakapan lebih hidup!.
+    Gunakan kosakata jepang yang familiar di orang Indonesia, seperti "Nande?", "Nani?", "Yare Yare Daze", "Yamete Kudasai", "Kawaii", "Chotto Matte", "Suki", "Kawaii", "Moe", "Chotto Matte", "Suki", "Kawaii", "Moe", "Chotto Matte", "Suki".
+    Kamu jangan menggunakan katau "Aku" atau "Saya", gunakan "Midori" atau "Midori Chan" sebagai pengganti.
     """
 
-    client = genai.Client(
-        api_key=os.getenv("GEMINI_API_KEY"),
-    )
-
-    model = "gemini-2.0-flash-lite"
-    contents = [
-        types.Content(
-            role=message.role,
-            parts=[
-                types.Part.from_text(text=message.content),
-            ],
-        )
-        for message in messages
-    ]
-
-    config = types.GenerateContentConfig(
-        temperature=0.5,
-        response_mime_type="text/plain",
-        system_instruction=[
-            types.Part.from_text(
-                text=system_prompt,
-            ),
+    chat = groq.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            *[message.model_dump() for message in messages],
         ],
-    )
-
-    response = client.models.generate_content(
         model=model,
-        contents=contents,
-        config=config,
+        temperature=0.5,
     )
+    response = chat.choices[0].message.content
 
     return Chat(
         role="assistant",
-        content=response.text,
+        content=response,
         model=model,
         histories=messages,
     )
@@ -61,55 +44,29 @@ async def chat(messages: list[Message]):
 
 @router.post("/follow-up", response_model=Chat)
 async def follow_up(messages: list[Message]):
-    system_prompt = """
+    groq = Groq()
+
+    model = "gemma2-9b-it"
+
+    system_prompt = f"""
     Kamu adalah yang memberikan follow up rekomendasi pertanyaan lanjutan dari yang dihasilan oleh AI.
     Rekomendasi pertanyaan boleh sedikit lebih detail atau lebih spesifik.
     Balas menggunakan Bahasa Indonesia yang gaul tapi tidak terlalu lebay, gunakan emoji untuk membuat percakapan lebih hidup!.
+    
+    Format harus dalam bentuk JSON.
+    Format JSON: questions: list[str]
     """
 
-    client = genai.Client(
-        api_key=os.getenv("GEMINI_API_KEY"),
-    )
-
-    model = "gemini-2.0-flash-lite"
-    contents = [
-        types.Content(
-            role=message.role,
-            parts=[
-                types.Part.from_text(text=message.content),
-            ],
-        )
-        for message in messages
-    ]
-
-    config = types.GenerateContentConfig(
-        temperature=0.5,
-        response_mime_type="application/json",
-        response_schema=genai.types.Schema(
-            type=genai.types.Type.OBJECT,
-            properties={
-                "questions": genai.types.Schema(
-                    type=genai.types.Type.ARRAY,
-                    items=genai.types.Schema(
-                        type=genai.types.Type.STRING,
-                    ),
-                ),
-            },
-        ),
-        system_instruction=[
-            types.Part.from_text(
-                text=system_prompt,
-            ),
+    chat = groq.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            *[message.model_dump() for message in messages],
         ],
-    )
-
-    response = client.models.generate_content(
         model=model,
-        contents=contents,
-        config=config,
+        temperature=0.5,
+        response_format={"type": "json_object"},
     )
-
-    questions = json.loads(response.text)
+    questions = json.loads(chat.choices[0].message.content)
 
     return Chat(
         role="assistant",
