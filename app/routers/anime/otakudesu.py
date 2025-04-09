@@ -51,9 +51,9 @@ async def search(query: str):
 
     soup = BeautifulSoup(html.content, "html.parser")
 
-    animes_section = soup.find("ul", class_="chivsrc")
-
     animes = []
+
+    animes_section = soup.find("ul", class_="chivsrc")
 
     for anime in animes_section.find_all("li"):
         id = anime.find("a")["href"].split("/")[-2]
@@ -86,9 +86,9 @@ async def ongoing_anime(page: int = 1):
 
     soup = BeautifulSoup(html.text, "html.parser")
 
-    animes_section = soup.find("div", class_="venz")
-
     animes = []
+
+    animes_section = soup.find("div", class_="venz")
 
     for anime in animes_section.find_all("li"):
         id = anime.find("a")["href"].split("/")[-2]
@@ -132,9 +132,9 @@ async def get_genres():
 
     soup = BeautifulSoup(html.text, "html.parser")
 
-    genres_section = soup.find("ul", class_="genres").find("li")
-
     genres = []
+
+    genres_section = soup.find("ul", class_="genres").find("li")
 
     for genre in genres_section.find_all("a"):
         id = genre["href"].split("/")[-2]
@@ -165,6 +165,7 @@ async def get_genres_anime(id: str, page: int = 1):
     soup = BeautifulSoup(html.text, "html.parser")
 
     animes = []
+
     for anime in soup.find_all("div", class_="col-anime"):
         id = (
             anime.find("div", class_="col-anime-title").find("a")["href"].split("/")[-2]
@@ -313,26 +314,28 @@ async def get_episode(id: str, episode_id: str):
         follow_redirects=True,
     )
 
-    soup = BeautifulSoup(html.content, "html.parser")
-
     if html.url != app_url + "/episode" + "/" + episode_id:
         raise HTTPException(status_code=404, detail="Episode not found")
 
-    title = soup.find("h1", class_="posttl").get_text(strip=True)
+    soup = BeautifulSoup(html.content, "html.parser")
+
+    title = soup.find("h1", class_="posttl").text.strip()
 
     default_stream_url = soup.find("div", class_="responsive-embed-stream").find(
         "iframe"
     )["src"]
 
+    quality = {}
+
     servers_section = soup.find("div", class_="mirrorstream")
-    qualtiy_servers = {}
+
     qualities = servers_section.find_all("ul")
     for quality in qualities:
         quality_name = quality.get("class")[0].replace("m", "")
         servers = []
         for server in quality.find_all("li"):
             server_id = server.find("a")["data-content"]
-            server_name = server.get_text(strip=True).lower()
+            server_name = server.text.strip().lower()
 
             servers.append(
                 Server(
@@ -340,15 +343,17 @@ async def get_episode(id: str, episode_id: str):
                     name=server_name,
                 )
             )
-        qualtiy_servers[quality_name] = servers
+        quality[quality_name] = servers
+
+    download_servers = {}
 
     downloads_section = soup.find("div", class_="download")
-    download_servers = {}
+
     for download in downloads_section.find_all("li"):
-        quality_name = download.find("strong").get_text(strip=True)
+        quality_name = download.find("strong").text.strip()
         servers = []
         for server in download.find_all("a"):
-            server_name = server.get_text(strip=True).lower()
+            server_name = server.text.strip().lower()
             server_url = server["href"]
 
             servers.append(
@@ -364,7 +369,7 @@ async def get_episode(id: str, episode_id: str):
         episode_id=episode_id,
         title=title,
         default_stream_url=default_stream_url,
-        servers=qualtiy_servers,
+        servers=quality,
         downloads=download_servers,
     )
 

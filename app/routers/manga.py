@@ -136,6 +136,7 @@ async def get_genres():
     html = httpx.get(app_url, follow_redirects=True)
 
     soup = BeautifulSoup(html.text, "html.parser")
+
     genres = []
 
     for genre in soup.find("ul", class_="genre").find_all("li"):
@@ -204,23 +205,29 @@ async def get_manga(id: str):
 
     image = soup.find("section", id="Informasi").find("img")["src"].split("?")[0]
 
-    genres_section = soup.find("ul", class_="genre")
     genres = []
+
+    genres_section = soup.find("ul", class_="genre")
+
     for genre in genres_section.find_all("li"):
         genre_id = genre.find("a")["href"].split("/")[-2]
         genre_name = genre.find("a").text.strip()
         genres.append(Genre(id=genre_id, name=genre_name))
 
-    chapters_section = soup.find("table", id="Daftar_Chapter")
     chapters = []
+
+    chapters_section = soup.find("table", id="Daftar_Chapter")
+
     for chapter in chapters_section.find_all("tr")[1:]:
         chapter_id = chapter.find("a")["href"].split("/")[-2]
         chapter_title = chapter.find("a").text.strip()
         date = chapter.find("td", class_="tanggalseries").text.strip()
         chapters.append(Chapter(id=chapter_id, title=chapter_title, date=date))
 
-    recommendation_section = soup.find("section", id="Spoiler")
     recommendations = []
+
+    recommendation_section = soup.find("section", id="Spoiler")
+
     for recommendation in recommendation_section.find_all("div", class_="grd"):
         recommendation_id = recommendation.find("a")["href"].split("/")[-2]
         recommendation_title = recommendation.find("div", class_="h4").text.strip()
@@ -268,6 +275,7 @@ async def get_chapter(id: str, chapter_id: str):
     date = date_tag.find_next_sibling("td").text.strip()
 
     pages = []
+
     for page in soup.find_all("img", class_="ww"):
         page_number = page["id"]
         image = page["src"]
