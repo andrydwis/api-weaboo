@@ -242,16 +242,20 @@ async def get_anime(id: str):
 
     studio = info_section.find("b", text="Studio").parent.text.split(":")[1].strip()
 
-    genres_section = info_section.find("b", text="Genre").parent
     genres = []
+
+    genres_section = info_section.find("b", text="Genre").parent
+
     for genre in genres_section.find_all("a"):
         genre_id = genre["href"].split("/")[-2]
         genre_name = genre.text.strip()
         genres.append(Genre(id=genre_id, name=genre_name))
 
+    episodes = []
+
     episodes_section = soup.find_all("div", class_="episodelist")
     episodes_section = episodes_section[1]
-    episodes = []
+
     for episode in episodes_section.find("ul").find_all("li"):
         episode_id = episode.find("a")["href"].split("/")[-2]
         # Extract the episode number after the word "episode"
@@ -262,8 +266,10 @@ async def get_anime(id: str):
         episode_number = match.group(1) if match else episode_title
         episodes.append(Episodes(id=episode_id, title=episode_number))
 
-    recommendations_section = soup.find("div", id="recommend-anime-series")
     recommendations = []
+
+    recommendations_section = soup.find("div", id="recommend-anime-series")
+
     for recommendation in recommendations_section.find_all("div", class_="isi-konten"):
         recommendation_id = recommendation.find("a")["href"].split("/")[-2]
         recommendation_title = recommendation.find(

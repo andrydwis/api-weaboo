@@ -1,8 +1,11 @@
 import base64
 import json
 import re
+import string
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from platform import release
+from pydoc import text
 
 import httpx
 from bs4 import BeautifulSoup
@@ -10,9 +13,17 @@ from fastapi import APIRouter, HTTPException
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
+from pendulum import duration
 from redis import asyncio as aioredis
 
-from app.models.anime import Anime, AnimePagination, Genre, Pagination
+from app.models.anime import (
+    Anime,
+    AnimeDetail,
+    AnimePagination,
+    Episodes,
+    Genre,
+    Pagination,
+)
 
 
 @asynccontextmanager
@@ -33,7 +44,30 @@ async def get_cache():
 
 @router.get("/search", response_model=list[Anime])
 async def search(query: str):
-    pass
+    html = httpx.get(app_url + "/?s=" + query, follow_redirects=True)
+
+    print(html.url)
+
+    soup = BeautifulSoup(html.content, "html.parser")
+
+    animes_section = soup.find("main", class_="relat")
+
+    animes = []
+
+    for anime in animes_section.find_all("div", class_="animepost"):
+        id = anime.find("a")["href"].split("/")[-2]
+        title = anime.find("h2").text.strip()
+        image = anime.find("img")["src"]
+        animes.append(
+            Anime(
+                id=id,
+                title=title,
+                episodes=None,
+                image=image,
+            )
+        )
+
+    return animes
 
 
 @router.get("/ongoing", response_model=AnimePagination)
@@ -149,4 +183,158 @@ async def genres_anime(id: str, page: int = 1):
             has_next_page=has_next_page,
             has_prev_page=has_prev_page,
         ),
+    )
+
+
+@router.get("/{id}", response_model=AnimeDetail)
+async def get_anime(id: str):
+    html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
+
+    print(html.url)
+
+    if html.url != app_url + "/anime/" + id + "/":
+        raise HTTPException(status_code=404, detail="Anime not found")
+
+    soup = BeautifulSoup(html.text, "html.parser")
+
+    title = (
+        soup.find("h3", class_="anim-detail")
+        .text.strip()
+        .replace("Detail Anime ", "")
+        .strip()
+    )
+
+    info_section = soup.find("div", class_="spe")
+
+    japanese_title = (
+        soup.find("b", text="Japanese")
+        .parent.text.strip()
+        .replace("Japanese", "")
+        .strip()
+    )
+
+    description = soup.find(
+        "div", class_="entry-content entry-content-single"
+    ).text.strip()
+
+    image = soup.find("div", class_="thumb").find("img")["src"]
+
+    score = soup.find("span", attrs={"itemprop": "ratingValue"}).text.strip()
+
+    producers = (
+        info_section.find("b", text="Producers")
+        .parent.text.strip()
+        .replace("Producers", "")
+        .strip()
+        .split(", ")
+    )
+
+    type = (
+        info_section.find("b", text="Type")
+        .parent.text.strip()
+        .replace("Type", "")
+        .strip()
+    )
+
+    status = (
+        info_section.find("b", text="Status")
+        .parent.text.strip()
+        .replace("Status", "")
+        .strip()
+    )
+
+    total_episodes = (
+        info_section.find("b", text="Total Episode")
+        .parent.text.strip()
+        .replace("Total Episode", "")
+        .strip()
+    )
+
+    duration = (
+        info_section.find("b", text="Duration")
+        .parent.text.strip()
+        .replace("Duration", "")
+        .strip()
+    )
+
+    release_date = (
+        info_section.find("b", text="Released:")
+        .parent.text.strip()
+        .replace("Released:", "")
+        .strip()
+    )
+
+    season = (
+        info_section.find("b", text="Season")
+        .parent.text.strip()
+        .replace("Season", "")
+        .strip()
+    )
+
+    studio = (
+        info_section.find("b", text="Studio")
+        .parent.text.strip()
+        .replace("Studio", "")
+        .strip()
+    )
+
+    genres = []
+
+    genres_section = soup.find("div", class_="genre-info")
+
+    for genre in genres_section.find_all("a"):
+        genre_id = genre["href"].split("/")[-2]
+        genre_name = genre.text.strip()
+        genres.append(Genre(id=genre_id, name=genre_name))
+
+    episodes = []
+
+    episodes_section = soup.find("div", class_="lstepsiode listeps").find("ul")
+
+    for episode in episodes_section.find_all("li"):
+        episode_id = episode.find("a")["href"].split("/")[-2]
+        episode_title = episode.find("div", class_="epsright").text.strip()
+        episodes.append(Episodes(id=episode_id, title=episode_title))
+
+    recommendations = []
+
+    recommendations_section = soup.find("div", class_="rand-animesu").find("ul")
+
+    for recommendation in recommendations_section.find_all("li"):
+        recommendation_id = recommendation.find("a")["href"].split("/")[-2]
+        recommendation_title = recommendation.find("span", class_="judul").text.strip()
+        recommendation_episodes = (
+            recommendation.find("span", class_="episode")
+            .text.strip()
+            .replace("Eps", "")
+            .strip()
+        )
+        recommendation_image = recommendation.find("img")["src"]
+        recommendations.append(
+            Anime(
+                id=recommendation_id,
+                title=recommendation_title,
+                episodes=recommendation_episodes,
+                image=recommendation_image,
+            )
+        )
+
+    return AnimeDetail(
+        id=id,
+        title=title,
+        japanese_title=japanese_title,
+        description=description,
+        image=image,
+        score=score,
+        type=type,
+        status=status,
+        total_episodes=total_episodes,
+        duration=duration,
+        release_date=release_date,
+        season=season,
+        producers=producers,
+        studio=studio,
+        genres=genres,
+        episodes=episodes,
+        recommendations=recommendations,
     )

@@ -46,6 +46,7 @@ class AnimeDetail(BaseModel):
     total_episodes: int | str | None = Field(examples=[12])
     duration: str | None = Field(examples=["24 menit"])
     release_date: str | None = Field(examples=["2025-01-01"])
+    season: str | None = Field(examples=["Winter 2025"])
     producers: list[str] | None = Field(examples=[["Toei Animation"]])
     studio: str | None = Field(examples=["Toei Animation"])
     genres: list[Genre] | None = Field(examples=[[Genre(id="action", name="Action")]])
