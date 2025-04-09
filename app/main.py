@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 
-from app.routers import ai, anime, manga, news
+from app.routers import ai, manga, news
+from app.routers.anime import otakudesu, samehadaku
 from app.routers.tools import social_media_downloader
 
 load_dotenv()
@@ -23,7 +24,12 @@ app = FastAPI()
 app.include_router(
     ai.router, prefix="/ai", tags=["ai"], dependencies=[Depends(check_api_key)]
 )
-app.include_router(anime.router, prefix="/anime", tags=["anime"])
+app.include_router(
+    otakudesu.router, prefix="/anime/otakudesu", tags=["anime otakudesu"]
+)
+app.include_router(
+    samehadaku.router, prefix="/anime/samehadaku", tags=["anime samehadaku"]
+)
 app.include_router(manga.router, prefix="/manga", tags=["manga"])
 app.include_router(news.router, prefix="/news", tags=["news"])
 app.include_router(

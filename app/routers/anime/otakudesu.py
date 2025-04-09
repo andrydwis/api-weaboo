@@ -132,8 +132,10 @@ async def get_genres():
 
     soup = BeautifulSoup(html.text, "html.parser")
 
-    genres = []
     genres_section = soup.find("ul", class_="genres").find("li")
+
+    genres = []
+
     for genre in genres_section.find_all("a"):
         id = genre["href"].split("/")[-2]
         name = genre.text.strip()
