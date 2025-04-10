@@ -191,8 +191,6 @@ async def genres_anime(id: str, page: int = 1):
 async def get_anime(id: str):
     html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
 
-    print(html.url)
-
     if html.url != app_url + "/anime/" + id + "/":
         raise HTTPException(status_code=404, detail="Anime not found")
 
@@ -214,9 +212,9 @@ async def get_anime(id: str):
         .strip()
     )
 
-    description = soup.find(
-        "div", class_="entry-content entry-content-single"
-    ).text.strip()
+    description = (
+        soup.find("div", class_="infox").find("div", class_="desc").text.strip()
+    )
 
     image = soup.find("div", class_="thumb").find("img")["src"]
 
