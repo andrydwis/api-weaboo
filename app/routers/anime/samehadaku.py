@@ -44,7 +44,7 @@ async def get_cache():
 
 @router.get("/search", response_model=list[Anime])
 async def search(query: str):
-    html = httpx.get(app_url + "/?s=" + query, follow_redirects=True)
+    html = httpx.get(app_url + "/page/1/?s=" + query, follow_redirects=True)
 
     print(html.url)
 
@@ -52,12 +52,15 @@ async def search(query: str):
 
     animes = []
 
-    animes_section = soup.find("main", class_="relat")
+    animes_section = soup.find("main", class_="site-main relat")
 
     for anime in animes_section.find_all("div", class_="animepost"):
         id = anime.find("a")["href"].split("/")[-2]
         title = anime.find("h2").text.strip()
-        image = anime.find("img")["src"]
+        try:
+            image = anime.find("img")["src"]
+        except:
+            image = "https://via.placeholder.com/150"
         animes.append(
             Anime(
                 id=id,
