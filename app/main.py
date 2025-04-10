@@ -25,10 +25,10 @@ app.include_router(
     ai.router, prefix="/ai", tags=["ai"], dependencies=[Depends(check_api_key)]
 )
 app.include_router(
-    otakudesu.router, prefix="/anime/otakudesu", tags=["anime otakudesu"]
+    otakudesu.router, prefix="/otakudesu/anime", tags=["anime otakudesu"]
 )
 app.include_router(
-    samehadaku.router, prefix="/anime/samehadaku", tags=["anime samehadaku"]
+    samehadaku.router, prefix="/samehadaku/anime", tags=["anime samehadaku"]
 )
 app.include_router(manga.router, prefix="/manga", tags=["manga"])
 app.include_router(news.router, prefix="/news", tags=["news"])

@@ -188,6 +188,8 @@ async def genres_anime(id: str, page: int = 1):
 async def get_anime(id: str):
     html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
 
+    print(html.url)
+
     if html.url != app_url + "/anime/" + id + "/":
         raise HTTPException(status_code=404, detail="Anime not found")
 
@@ -215,7 +217,10 @@ async def get_anime(id: str):
 
     image = soup.find("div", class_="thumb").find("img")["src"]
 
-    score = soup.find("span", attrs={"itemprop": "ratingValue"}).text.strip()
+    try:
+        score = soup.find("span", attrs={"itemprop": "ratingValue"}).text.strip()
+    except:
+        score = "0"
 
     producers = (
         info_section.find("b", text="Producers")
@@ -244,6 +249,7 @@ async def get_anime(id: str):
         .parent.text.strip()
         .replace("Total Episode", "")
         .strip()
+        or "1"
     )
 
     duration = (
@@ -251,6 +257,7 @@ async def get_anime(id: str):
         .parent.text.strip()
         .replace("Duration", "")
         .strip()
+        or "0 m"
     )
 
     release_date = (
@@ -310,7 +317,7 @@ async def get_anime(id: str):
             Anime(
                 id=recommendation_id,
                 title=recommendation_title,
-                episodes=recommendation_episodes,
+                episodes=None,
                 image=recommendation_image,
             )
         )
