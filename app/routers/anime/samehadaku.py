@@ -287,7 +287,7 @@ async def get_anime(id: str):
     genres_section = soup.find("div", class_="genre-info")
 
     for genre in genres_section.find_all("a"):
-        genre_id = genre["href"].split("/")[-2]
+        genre_id = genre["href"].split("/")[-1]
         genre_name = genre.text.strip()
         genres.append(Genre(id=genre_id, name=genre_name))
 
