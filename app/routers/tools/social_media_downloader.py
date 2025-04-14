@@ -13,10 +13,6 @@ router = APIRouter()
 COOKIE_FILE = "cookies.txt"
 
 
-# Define the cookie file path globally or pass it as a parameter
-COOKIE_FILE = "cookies.txt"
-
-
 async def get_cookies(
     platform: str, url: str | None = None, cookie_file: str = "cookies.txt"
 ) -> bool:
@@ -95,10 +91,39 @@ def format_cookies(cookies_str: str | None) -> dict[str, str] | None:
     return cookies
 
 
+def detect_platform(url):
+    if "tiktok.com" in url.lower():
+        platform = "tiktok"
+    elif any(
+        domain in url.lower()
+        for domain in ["facebook.com", "fb.watch", "fb.gg", "m.facebook.com"]
+    ):
+        platform = "facebook"
+    elif any(
+        domain in url.lower()
+        for domain in [
+            "youtube.com",
+            "youtu.be",
+            "m.youtube.com",
+            "youtube-nocookie.com",
+        ]
+    ):
+        platform = "youtube"
+    elif any(
+        domain in url.lower() for domain in ["instagram.com", "instagr.am", "ig.me"]
+    ):
+        platform = "instagram"
+    elif "twitter.com" in url.lower():
+        platform = "twitter"
+    else:
+        raise HTTPException(400, detail="Unsupported platform")
+
+    return platform
+
+
 @router.get("/download/", response_model=Metadata)
 async def download(
-    platform: str,
-    video_url: str,
+    url: str,
 ):
     """
     Extract metadata (e.g., title, duration, formats, streaming URLs) for a video
@@ -108,9 +133,12 @@ async def download(
     - MP4 formats (video with or without audio)
     - Audio-only formats (e.g., .m4a files) with detailed audio information (bitrate, codec, format, etc.)
     """
+    # detect platform tiktok, facebook, youtube, instagram, twitter, etc.
+    platform = detect_platform(url)
+
     # Handle cookies
     if platform == "tiktok" or platform == "youtube":
-        if not await get_cookies(platform, video_url):
+        if not await get_cookies(platform, url):
             raise HTTPException(500, detail="Cookie generation failed")
 
     # Define yt-dlp options
@@ -123,11 +151,7 @@ async def download(
         },
     }
 
-    if any(
-        domain in video_url.lower()
-        for domain in ["tiktok.com", "youtube.com", "youtu.be"]
-    ):
-        print("TikTok or YouTube URL detected")
+    if platform in ["tiktok", "youtube"]:
         ydl_opts.update(
             {
                 "no_watermark": True,
@@ -138,7 +162,7 @@ async def download(
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             # Extract info without downloading
-            info = ydl.extract_info(video_url, download=False)
+            info = ydl.extract_info(url, download=False)
 
             # Detect platform automatically
             platform = info.get("extractor_key", "Unknown Platform").capitalize()
