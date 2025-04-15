@@ -216,7 +216,10 @@ async def get_anime(id: str):
         soup.find("div", class_="infox").find("div", class_="desc").text.strip()
     )
 
-    image = soup.find("div", class_="thumb").find("img")["src"]
+    try:
+        image = soup.find("div", class_="thumb").find("img")["src"]
+    except:
+        image = "https://via.placeholder.com/150"
 
     try:
         score = soup.find("span", attrs={"itemprop": "ratingValue"}).text.strip()
