@@ -150,9 +150,6 @@ async def upload_file(file: UploadFile = File(...)):
         "image/png",
         "image/gif",
         "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # docx
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # xlsx
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # pptx
     ]
     try:
         # Validasi ukuran berkas
@@ -183,27 +180,6 @@ async def upload_file(file: UploadFile = File(...)):
             file_extension = ".gif"
         elif file.content_type == "application/pdf":
             file_extension = ".pdf"
-        elif (
-            file.content_type
-            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ):
-            file_extension = ".docx"
-        elif file.content_type == "application/msword":
-            file_extension = ".doc"
-        elif file.content_type == "application/vnd.ms-excel":
-            file_extension = ".xls"
-        elif (
-            file.content_type
-            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ):
-            file_extension = ".xlsx"
-        elif file.content_type == "application/vnd.ms-powerpoint":
-            file_extension = ".ppt"
-        elif (
-            file.content_type
-            == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        ):
-            file_extension = ".pptx"
         else:
             raise HTTPException(
                 status_code=400,
