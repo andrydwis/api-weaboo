@@ -183,6 +183,32 @@ async def upload_file(file: UploadFile = File(...)):
             file_extension = ".gif"
         elif file.content_type == "application/pdf":
             file_extension = ".pdf"
+        elif (
+            file.content_type
+            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ):
+            file_extension = ".docx"
+        elif file.content_type == "application/msword":
+            file_extension = ".doc"
+        elif file.content_type == "application/vnd.ms-excel":
+            file_extension = ".xls"
+        elif (
+            file.content_type
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ):
+            file_extension = ".xlsx"
+        elif file.content_type == "application/vnd.ms-powerpoint":
+            file_extension = ".ppt"
+        elif (
+            file.content_type
+            == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        ):
+            file_extension = ".pptx"
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Tipe berkas tidak diizinkan. Hanya berkas gambar (jpeg, png, gif), PDF, dan dokumen Microsoft Office yang diperbolehkan.",
+            )
 
         # Buat nama berkas baru berdasarkan timestamp
         new_filename = f"{timestamp}{file_extension}"
