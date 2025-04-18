@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("/chat/waifu", response_model=Chat)
-async def chat(messages: list[Message]):
+async def chat_waifu(messages: list[Message]):
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
     model = "gemini-2.0-flash"
@@ -145,7 +145,15 @@ async def chat_document(messages: list[Message]):
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     max_file_size = 4 * 1024 * 1024  # 4MB
-    allowed_file_types = ["image/jpeg", "image/png", "image/gif", "application/pdf"]
+    allowed_file_types = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # docx
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # xlsx
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # pptx
+    ]
     try:
         # Validasi ukuran berkas
         if file.size > max_file_size:
