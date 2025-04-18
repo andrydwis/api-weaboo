@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class Message(BaseModel):
     role: str = Field(examples=["user"])
     content: str = Field(examples=["Siapa karakter ini?"])
-    files: list[str] | None = Field(examples=[["files/3amiatb99u3g"]])
+    files: list[str] | None = Field(default=None, examples=[["files/3amiatb99u3g"]])
 
 
 class Chat(BaseModel):
