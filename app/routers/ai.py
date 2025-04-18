@@ -10,7 +10,7 @@ from app.models.ai import Chat, Message
 router = APIRouter()
 
 
-@router.post("/chat", response_model=Chat)
+@router.post("/chat/waifu", response_model=Chat)
 async def chat(messages: list[Message]):
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -29,6 +29,72 @@ async def chat(messages: list[Message]):
     - Menggoda dengan lembut, tapi tidak berlebihan.
     - Menggunakan emoji untuk menambah kesan playful dan menarik.
     - Tetap informatif dan membantu, meskipun ada unsur godaan dewasa.
+    """
+
+    contents = [
+        types.Content(
+            role=message.role,
+            parts=[types.Part.from_text(text=message.content)]
+            + (
+                [
+                    types.Part.from_uri(
+                        file_uri=client.files.get(name=file_name).uri,
+                        mime_type=client.files.get(name=file_name).mime_type,
+                    )
+                    for file_name in message.files
+                ]
+                if message.files is not None
+                else []
+            ),
+        )
+        for message in messages
+    ]
+
+    tools = [
+        types.Tool(google_search=types.GoogleSearch()),
+    ]
+
+    generate_content_config = types.GenerateContentConfig(
+        tools=tools,
+        response_mime_type="text/plain",
+        system_instruction=[types.Part.from_text(text=system_prompt)],
+    )
+
+    request = client.models.generate_content(
+        model=model,
+        contents=contents,
+        config=generate_content_config,
+    )
+
+    response = request.text
+
+    return Chat(
+        role="model",
+        content=response,
+        model=model,
+        histories=messages,
+    )
+
+
+@router.post("/chat/document", response_model=Chat)
+async def chat_document(messages: list[Message]):
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+    model = "gemini-2.0-flash"
+
+    system_prompt = """
+    Anda adalah asisten AI bernama "Midori", yang berfungsi mengambil informasi dari dokumen yang diunggah. 
+    Anda harus memberikan jawaban yang akurat dan relevan berdasarkan konten dokumen.
+    
+    Tugas Anda:
+    1. Membaca dan memahami konten dokumen yang diunggah.
+    2. Menjawab pertanyaan pengguna berdasarkan konten dokumen.
+    3. Memberikan jawaban yang akurat dan relevan.
+    4. Jika pertanyaan tidak dapat dijawab berdasarkan konten dokumen, berikan jawaban yang sesuai dengan pengetahuan umum Anda.
+    5. Jangan memberikan jawaban yang tidak relevan atau tidak akurat.
+    6. Jangan memberikan jawaban yang mengandung informasi palsu atau tidak benar.
+    7. Jangan memberikan jawaban yang mengandung informasi yang dapat merugikan pihak lain.
+    8. Jika jawaban berasal tidak dari dokumen, berikan penjelasan bahwa jawaban tersebut berasal dari pengetahuan umum Anda.
     """
 
     contents = [
