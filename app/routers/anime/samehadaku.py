@@ -91,7 +91,10 @@ async def ongoing(page: int = 1):
         except (AttributeError, IndexError, ValueError):
             episodes = None
         title = anime.find("h2").text.strip()
-        image = anime.find("img")["src"]
+        try:
+            image = anime.find("img")["src"]
+        except:
+            image = "https://via.placeholder.com/150"
         animes.append(
             Anime(
                 id=id,
@@ -161,7 +164,10 @@ async def genres_anime(id: str, page: int = 1):
     for anime in animes_section.find_all("div", class_="animepost"):
         id = anime.find("a")["href"].split("/")[-2]
         title = anime.find("h2").text.strip()
-        image = anime.find("img")["src"]
+        try:
+            image = anime.find("img")["src"]
+        except:
+            image = "https://via.placeholder.com/150"
         animes.append(
             Anime(
                 id=id,
@@ -316,7 +322,10 @@ async def get_anime(id: str):
             .replace("Eps", "")
             .strip()
         )
-        recommendation_image = recommendation.find("img")["src"]
+        try:
+            recommendation_image = recommendation.find("img")["src"]
+        except:
+            recommendation_image = "https://via.placeholder.com/150"
         recommendations.append(
             Anime(
                 id=recommendation_id,
