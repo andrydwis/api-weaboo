@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from re import A
 
 import httpx
+from annotated_types import T
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException
 from fastapi_cache import FastAPICache
@@ -44,7 +45,11 @@ async def get_cache():
 
 @router.get("/search", response_model=list[Anime])
 async def search(query: str):
-    html = httpx.get(app_url + "/page/1/?s=" + query, follow_redirects=True)
+    html = httpx.get(
+        app_url + "/page/1/?s=" + query,
+        follow_redirects=True,
+        timeout=30,
+    )
 
     print(html.url)
 
@@ -76,7 +81,9 @@ async def search(query: str):
 @router.get("/ongoing", response_model=AnimePagination)
 async def ongoing(page: int = 1):
     html = httpx.get(
-        app_url + "/anime-terbaru" + "/page" + "/" + str(page), follow_redirects=True
+        app_url + "/anime-terbaru" + "/page" + "/" + str(page),,
+        follow_redirects=True,
+        timeout=30,
     )
     soup = BeautifulSoup(html.content, "html.parser")
 
@@ -122,7 +129,11 @@ async def ongoing(page: int = 1):
 
 @router.get("/genres", response_model=list[Genre])
 async def genres():
-    html = httpx.get(app_url + "/daftar-anime-2", follow_redirects=True)
+    html = httpx.get(
+        app_url + "/daftar-anime-2",
+        follow_redirects=True,
+        timeout=30,
+    )
 
     soup = BeautifulSoup(html.text, "html.parser")
 
@@ -146,8 +157,9 @@ async def genres():
 @router.get("/genres/{id}", response_model=AnimePagination)
 async def genres_anime(id: str, page: int = 1):
     html = httpx.get(
-        app_url + "/genre/" + id + "/page/" + str(page),
+        app_url + "/genre/" + id + "/page/" + str(page),,
         follow_redirects=True,
+        timeout=30,
     )
 
     if html.url != (
@@ -195,7 +207,10 @@ async def genres_anime(id: str, page: int = 1):
 
 @router.get("/{id}", response_model=AnimeDetail)
 async def get_anime(id: str):
-    html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
+    html = httpx.get(app_url + "/anime" + "/" + id,
+        follow_redirects=True,
+        timeout=30,
+    )
 
     if html.url != app_url + "/anime/" + id + "/":
         raise HTTPException(status_code=404, detail="Anime not found")
@@ -361,6 +376,7 @@ async def get_episode(id: str, episode_id: str):
     html = httpx.get(
         app_url + "/" + episode_id,
         follow_redirects=True,
+        timeout=30,
     )
 
     if html.url != app_url + "/" + episode_id + "/":
