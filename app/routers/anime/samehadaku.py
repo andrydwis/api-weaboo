@@ -151,7 +151,7 @@ async def genres_anime(id: str, page: int = 1):
     )
 
     if html.url != (
-        app_url + "/genre" + "/" + id + "/page" + "/" + str(page)
+        app_url + "/genre" + "/" + id + "/page" + "/" + str(page) + "/"
     ) and html.url != (app_url + "/genre" + "/" + id + "/"):
         raise HTTPException(status_code=404, detail="Genre not found")
 
