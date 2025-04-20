@@ -78,7 +78,7 @@ async def search(query: str):
 
 
 @router.get("/ongoing", response_model=AnimePagination)
-@cache(expire=360)
+@cache(expire=3600)
 async def ongoing_anime(page: int = 1):
     html = httpx.get(
         app_url + "/ongoing-anime" + "/page" + "/" + str(page), follow_redirects=True
@@ -123,7 +123,7 @@ async def ongoing_anime(page: int = 1):
 
 
 @router.get("/genres", response_model=list[Genre])
-@cache(expire=360)
+@cache(expire=3600)
 async def get_genres():
     html = httpx.get(
         app_url + "/genre-list",
@@ -150,7 +150,7 @@ async def get_genres():
 
 
 @router.get("/genres/{id}", response_model=AnimePagination)
-@cache(expire=360)
+@cache(expire=3600)
 async def get_genres_anime(id: str, page: int = 1):
     html = httpx.get(
         app_url + "/genres" + "/" + id + "/page" + "/" + str(page),
@@ -197,7 +197,7 @@ async def get_genres_anime(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=AnimeDetail)
-@cache(expire=360)
+@cache(expire=3600)
 async def get_anime(id: str):
     html = httpx.get(app_url + "/anime" + "/" + id, follow_redirects=True)
 
@@ -307,7 +307,7 @@ async def get_anime(id: str):
 
 
 @router.get("/{id}/episodes/{episode_id}", response_model=EpisodesDetail)
-@cache(expire=360)
+@cache(expire=3600)
 async def get_episode(id: str, episode_id: str):
     html = httpx.get(
         app_url + "/episode/" + episode_id,
@@ -375,7 +375,7 @@ async def get_episode(id: str, episode_id: str):
 
 
 @router.get("/{id}/servers/{server_id}", response_model=ServerDetail)
-@cache(expire=360)
+@cache(expire=3600)
 async def get_server(id: str, server_id: str):
     nonce = getNonce()
 

@@ -63,7 +63,7 @@ async def search(query: str):
 
 
 @router.get("/recent", response_model=list[Manga])
-@cache(expire=360)
+@cache(expire=3600)
 async def get_recent_update(page: int = 1):
     html = httpx.get(
         api_url + "/manga/page/" + str(page) + "/?orderby=modified",
@@ -97,7 +97,7 @@ async def get_recent_update(page: int = 1):
 
 
 @router.get("/popular", response_model=list[Manga])
-@cache(expire=360)
+@cache(expire=3600)
 async def get_popular(page: int = 1):
     html = httpx.get(
         api_url + "/manga/page/" + str(page) + "/?orderby=meta_value_num",
@@ -131,7 +131,7 @@ async def get_popular(page: int = 1):
 
 
 @router.get("/genres", response_model=list[Genre])
-@cache(expire=360)
+@cache(expire=3600)
 async def get_genres():
     html = httpx.get(app_url, follow_redirects=True)
 
@@ -153,7 +153,7 @@ async def get_genres():
 
 
 @router.get("/genres/{id}", response_model=list[Manga])
-@cache(expire=360)
+@cache(expire=3600)
 async def get_genre(id: str, page: int = 1):
     html = httpx.get(
         api_url + "/genre/" + id + "/page/" + str(page), follow_redirects=True
@@ -186,7 +186,7 @@ async def get_genre(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=MangaDetail)
-@cache(expire=360)
+@cache(expire=3600)
 async def get_manga(id: str):
     html = httpx.get(app_url + "/manga/" + id, follow_redirects=True)
 
@@ -262,7 +262,7 @@ async def get_manga(id: str):
 
 
 @router.get("/{id}/chapters/{chapter_id}", response_model=MangaChapter)
-@cache(expire=360)
+@cache(expire=3600)
 async def get_chapter(id: str, chapter_id: str):
     html = httpx.get(app_url + "/" + chapter_id, follow_redirects=True)
 

@@ -31,7 +31,7 @@ async def get_cache():
 
 
 @router.get("/recent", response_model=list[News])
-@cache(expire=360)
+@cache(expire=3600)
 async def get_recent_news():
     html = httpx.get(
         app_url,
@@ -76,7 +76,7 @@ async def get_recent_news():
 
 
 @router.get("/{id}", response_model=News)
-# @cache(expire=360)
+# @cache(expire=3600)
 async def get_news(id: str):
     id = base64.b64decode(id).decode("utf-8")
     html = httpx.get(app_url + "/news/" + id, follow_redirects=True)
