@@ -81,7 +81,7 @@ async def search(query: str):
 @router.get("/ongoing", response_model=AnimePagination)
 async def ongoing(page: int = 1):
     html = httpx.get(
-        app_url + "/anime-terbaru" + "/page" + "/" + str(page),,
+        app_url + "/anime-terbaru" + "/page" + "/" + str(page),
         follow_redirects=True,
         timeout=30,
     )
@@ -157,7 +157,7 @@ async def genres():
 @router.get("/genres/{id}", response_model=AnimePagination)
 async def genres_anime(id: str, page: int = 1):
     html = httpx.get(
-        app_url + "/genre/" + id + "/page/" + str(page),,
+        app_url + "/genre/" + id + "/page/" + str(page),
         follow_redirects=True,
         timeout=30,
     )
@@ -207,7 +207,8 @@ async def genres_anime(id: str, page: int = 1):
 
 @router.get("/{id}", response_model=AnimeDetail)
 async def get_anime(id: str):
-    html = httpx.get(app_url + "/anime" + "/" + id,
+    html = httpx.get(
+        app_url + "/anime" + "/" + id,
         follow_redirects=True,
         timeout=30,
     )
