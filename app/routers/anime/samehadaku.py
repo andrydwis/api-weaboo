@@ -44,14 +44,13 @@ async def get_cache():
 
 
 @router.get("/search", response_model=list[Anime])
+@cache(expire=3600)
 async def search(query: str):
     html = httpx.get(
         app_url + "/page/1/?s=" + query,
         follow_redirects=True,
         timeout=30,
     )
-
-    print(html.url)
 
     soup = BeautifulSoup(html.content, "html.parser")
 
@@ -79,12 +78,15 @@ async def search(query: str):
 
 
 @router.get("/ongoing", response_model=AnimePagination)
+@cache(expire=3600)
 async def ongoing(page: int = 1):
     html = httpx.get(
         app_url + "/anime-terbaru" + "/page" + "/" + str(page),
         follow_redirects=True,
         timeout=30,
     )
+
+    print(html.url)
     soup = BeautifulSoup(html.content, "html.parser")
 
     animes = []
@@ -128,6 +130,7 @@ async def ongoing(page: int = 1):
 
 
 @router.get("/genres", response_model=list[Genre])
+@cache(expire=3600)
 async def genres():
     html = httpx.get(
         app_url + "/daftar-anime-2",
@@ -155,6 +158,7 @@ async def genres():
 
 
 @router.get("/genres/{id}", response_model=AnimePagination)
+@cache(expire=3600)
 async def genres_anime(id: str, page: int = 1):
     html = httpx.get(
         app_url + "/genre/" + id + "/page/" + str(page),
@@ -206,6 +210,7 @@ async def genres_anime(id: str, page: int = 1):
 
 
 @router.get("/{id}", response_model=AnimeDetail)
+@cache(expire=3600)
 async def get_anime(id: str):
     html = httpx.get(
         app_url + "/anime" + "/" + id,
@@ -373,6 +378,7 @@ async def get_anime(id: str):
 
 
 @router.get("/{id}/episodes/{episode_id}", response_model=EpisodesDetail)
+@cache(expire=3600)
 async def get_episode(id: str, episode_id: str):
     html = httpx.get(
         app_url + "/" + episode_id,
@@ -471,6 +477,7 @@ async def get_episode(id: str, episode_id: str):
 
 
 @router.get("/{id}/servers/{server_id}", response_model=ServerDetail)
+@cache(expire=3600)
 async def get_server(id: str, server_id: str):
     server_url = get_server_url(server_id)
 
