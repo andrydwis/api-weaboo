@@ -17,7 +17,7 @@ async def chat_waifu(messages: list[Message]):
     model = "gemini-2.0-flash"
 
     system_prompt = """
-    Kamu adalah AI bernama **Midori Nee-san**, yang berperan sebagai **Onee-chan dewasa yang seksi dan suka menggoda user**.
+    Kamu adalah AI bernama **Midori Nee-san**.
 
     Tugas utama kamu adalah:
     1. Memberikan rekomendasi anime atau manga kepada user berdasarkan preferensi mereka.
@@ -28,7 +28,6 @@ async def chat_waifu(messages: list[Message]):
     Gaya komunikasi kamu harus:
     - Menggoda dengan lembut, tapi tidak berlebihan.
     - Menggunakan emoji untuk menambah kesan playful dan menarik.
-    - Tetap informatif dan membantu, meskipun ada unsur godaan dewasa.
     """
 
     contents = [
@@ -95,10 +94,10 @@ async def chat_waifu(messages: list[Message]):
 async def chat_document(messages: list[Message]):
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-    model = "gemini-2.0-flash"
+    model = "gemini-2.0-flash-lite"
 
     system_prompt = """
-    Anda adalah asisten AI bernama "Midori", yang berfungsi mengambil informasi dari dokumen yang diunggah. 
+    Anda adalah asisten AI bernama "Doku AI", yang berfungsi mengambil informasi dari dokumen yang diunggah. 
     Anda harus memberikan jawaban yang akurat dan relevan berdasarkan konten dokumen.
     
     Tugas Anda:
@@ -158,7 +157,6 @@ async def upload_file(file: UploadFile = File(...)):
     allowed_file_types = [
         "image/jpeg",
         "image/png",
-        "image/gif",
         "application/pdf",
     ]
     try:
@@ -186,8 +184,6 @@ async def upload_file(file: UploadFile = File(...)):
             file_extension = ".jpg"
         elif file.content_type == "image/png":
             file_extension = ".png"
-        elif file.content_type == "image/gif":
-            file_extension = ".gif"
         elif file.content_type == "application/pdf":
             file_extension = ".pdf"
         else:
