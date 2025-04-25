@@ -68,6 +68,21 @@ async def chat_waifu(messages: list[Message]):
 
     response = request.text
 
+    # if using grounding search
+    sources = request.candidates[0].grounding_metadata
+    if sources and sources.grounding_chunks:
+        search_sources = []
+        for chunk in sources.grounding_chunks:
+            search_sources.append(
+                {
+                    "title": chunk.web.title,
+                    "link": chunk.web.uri,
+                }
+            )
+        response = {"response": response, "sources": search_sources}
+    else:
+        response = {"response": response}
+
     return Chat(
         role="model",
         content=response,
@@ -116,12 +131,7 @@ async def chat_document(messages: list[Message]):
         for message in messages
     ]
 
-    tools = [
-        types.Tool(google_search=types.GoogleSearch()),
-    ]
-
     generate_content_config = types.GenerateContentConfig(
-        tools=tools,
         response_mime_type="text/plain",
         system_instruction=[types.Part.from_text(text=system_prompt)],
     )
