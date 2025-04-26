@@ -65,7 +65,7 @@ async def search(query: str):
         try:
             image = anime.find("img")["src"]
         except:
-            image = "https://via.placeholder.com/150"
+            image = "https://placehold.co/400"
         animes.append(
             Anime(
                 id=id,
@@ -104,7 +104,7 @@ async def ongoing(page: int = 1):
         try:
             image = anime.find("img")["src"]
         except:
-            image = "https://via.placeholder.com/150"
+            image = "https://placehold.co/400"
         animes.append(
             Anime(
                 id=id,
@@ -161,8 +161,7 @@ async def schedule():
                     id=anime_json["slug"],
                     title=anime_json["title"],
                     episodes=None,
-                    image=anime_json["featured_img_src"]
-                    or "https://via.placeholder.com/150",
+                    image=anime_json["featured_img_src"] or "https://placehold.co/400",
                 )
             )
 
@@ -230,7 +229,7 @@ async def genres_anime(id: str, page: int = 1):
         try:
             image = anime.find("img")["src"]
         except:
-            image = "https://via.placeholder.com/150"
+            image = "https://placehold.co/400"
         animes.append(
             Anime(
                 id=id,
@@ -293,7 +292,7 @@ async def get_anime(id: str):
     try:
         image = soup.find("div", class_="thumb").find("img")["src"]
     except:
-        image = "https://via.placeholder.com/150"
+        image = "https://placehold.co/400"
 
     try:
         score = soup.find("span", attrs={"itemprop": "ratingValue"}).text.strip()
@@ -393,7 +392,7 @@ async def get_anime(id: str):
         try:
             recommendation_image = recommendation.find("img")["src"]
         except:
-            recommendation_image = "https://via.placeholder.com/150"
+            recommendation_image = "https://placehold.co/400"
         recommendations.append(
             Anime(
                 id=recommendation_id,
