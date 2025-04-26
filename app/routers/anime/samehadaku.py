@@ -22,6 +22,7 @@ from app.models.anime import (
     EpisodesDetail,
     Genre,
     Pagination,
+    Schedule,
     Server,
     ServerDetail,
 )
@@ -127,6 +128,52 @@ async def ongoing(page: int = 1):
             has_prev_page=has_prev_page,
         ),
     )
+
+
+@router.get("/schedule", response_model=list[Schedule])
+@cache(expire=3600)
+async def schedule():
+    days = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
+
+    schedule = []
+
+    for day in days:
+        animes_json = httpx.get(
+            f"https://samehadaku.mba/wp-json/custom/v1/all-schedule?perpage=20&day={day}&type=schtml",
+            follow_redirects=True,
+            timeout=30,
+        ).json()
+
+        animes = []
+
+        for anime_json in animes_json:
+
+            animes.append(
+                Anime(
+                    id=anime_json["slug"],
+                    title=anime_json["title"],
+                    episodes=None,
+                    image=anime_json["featured_img_src"]
+                    or "https://via.placeholder.com/150",
+                )
+            )
+
+        schedule.append(
+            Schedule(
+                day=day,
+                animes=animes,
+            )
+        )
+
+    return schedule
 
 
 @router.get("/genres", response_model=list[Genre])

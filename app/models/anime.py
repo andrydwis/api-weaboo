@@ -15,6 +15,11 @@ class Anime(BaseModel):
     )
 
 
+class Schedule(BaseModel):
+    day: str = Field(examples=["monday"])
+    animes: list[Anime]
+
+
 class Pagination(BaseModel):
     total_items: int = Field(examples=[20])
     current_page: int = Field(examples=[1])
