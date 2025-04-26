@@ -30,12 +30,22 @@ async def get_cache():
     return 1
 
 
-@router.get("/recent", response_model=list[News])
+@router.get("/recent")
 @cache(expire=3600)
 async def get_recent_news():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "DNT": "1",  # Do Not Track
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
     html = httpx.get(
         app_url,
         follow_redirects=True,
+        headers=headers,
     )
 
     soup = BeautifulSoup(html.content, "html.parser")
@@ -59,6 +69,8 @@ async def get_recent_news():
         tz = timezone(timedelta(hours=7))
         dt_tz = dt.astimezone(tz)
         published_at = dt_tz.strftime("%d %B %Y, %H:%M")
+
+        print(published_at)
 
         if category == "news":
             news.append(
