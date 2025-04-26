@@ -88,10 +88,19 @@ async def get_recent_news():
 
 
 @router.get("/{id}", response_model=News)
-# @cache(expire=3600)
+@cache(expire=3600)
 async def get_news(id: str):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "DNT": "1",  # Do Not Track
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
     id = base64.b64decode(id).decode("utf-8")
-    html = httpx.get(app_url + "/news/" + id, follow_redirects=True)
+    html = httpx.get(app_url + "/news/" + id, follow_redirects=True, headers=headers)
 
     soup = BeautifulSoup(html.content, "html.parser")
 
