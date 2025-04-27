@@ -79,7 +79,7 @@ async def search(query: str):
 
 
 @router.get("/ongoing", response_model=AnimePagination)
-# @cache(expire=3600)
+@cache(expire=3600)
 async def ongoing(page: int = 1):
     html = httpx.get(
         app_url + "/anime-terbaru" + "/page" + "/" + str(page),

@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
+from fastapi_cache import FastAPICache
 
 from app.routers import ai, manga, news
 from app.routers.anime import otakudesu, samehadaku
@@ -42,6 +43,11 @@ app.include_router(
 @app.get("/")
 async def root():
     return {"status": "ok", "docs": "/docs"}
+
+
+@app.get("/clear")
+async def clear():
+    return await FastAPICache.clear()
 
 
 if __name__ == "__main__":
