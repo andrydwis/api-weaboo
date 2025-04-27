@@ -79,7 +79,7 @@ async def search(query: str):
 
 
 @router.get("/ongoing", response_model=AnimePagination)
-@cache(expire=3600)
+# @cache(expire=3600)
 async def ongoing(page: int = 1):
     html = httpx.get(
         app_url + "/anime-terbaru" + "/page" + "/" + str(page),
@@ -101,9 +101,9 @@ async def ongoing(page: int = 1):
             episodes = None
         title = anime.find("h2").text.strip()
         try:
-            # image = anime.find("img")["src"]
-            anime_detail = await get_anime(id)
-            image = anime_detail["image"]
+            image = anime.find("img")["src"]
+            # anime_detail = await get_anime(id)
+            # image = anime_detail["image"]
         except:
             image = "https://placehold.co/400"
         animes.append(
