@@ -70,8 +70,6 @@ async def get_recent_news():
         dt_tz = dt.astimezone(tz)
         published_at = dt_tz.strftime("%d %B %Y, %H:%M")
 
-        print(published_at)
-
         if category == "news":
             news.append(
                 News(

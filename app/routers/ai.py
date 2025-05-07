@@ -94,7 +94,7 @@ async def chat_waifu(messages: list[Message]):
 async def chat_document(messages: list[Message]):
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-    model = "gemini-2.0-flash-lite"
+    model = "gemini-2.0-flash"
 
     system_prompt = """
     Anda adalah asisten AI bernama "Doku AI", yang berfungsi mengambil informasi dari dokumen yang diunggah. 
